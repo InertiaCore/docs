@@ -502,8 +502,8 @@ Some props are intentionally grouped under `options` instead of being top-level 
 <ClientSpecific>
   When setting the <ReactSpecific>`disableWhileProcessing`</ReactSpecific>
   <SvelteSpecific>`disableWhileProcessing`</SvelteSpecific>
-  <VueSpecific>`disable-while-processing`</VueSpecific>prop, the `Form`
-  component will add the `inert` attribute to the HTML `form`tag while the form
+  <VueSpecific>`disable-while-processing`</VueSpecific> prop, the `Form`
+  component will add the `inert` attribute to the HTML `form` tag while the form
   is processing to prevent user interaction.
 </ClientSpecific>
 
@@ -1449,7 +1449,7 @@ function submit(e) {
 
 </CodeGroup>
 
-To submit the form, you may use the `get`, `post`, `put`, `patch`and `delete` methods.
+To submit the form, you may use the `get`, `post`, `put`, `patch` and `delete` methods.
 
 <CodeGroup>
 
@@ -1875,21 +1875,21 @@ To instruct Inertia to store a form's data and errors in [history state](/v3/dat
 import { useForm } from '@inertiajs/vue3'
 
 const form = useForm('CreateUser', data)
-const form = useForm(`EditUser:${user.id}\
+const form = useForm(`EditUser:${user.id}`, data)
 ```
 
 ```js React icon="react"
 import { useForm } from '@inertiajs/react'
 
 const form = useForm('CreateUser', data)
-const form = useForm(`EditUser:${user.id}\
+const form = useForm(`EditUser:${user.id}`, data)
 ```
 
 ```js Svelte icon="s"
 import { useForm } from '@inertiajs/svelte'
 
 const form = useForm('CreateUser', data)
-const form = useForm(`EditUser:${user.id}\
+const form = useForm(`EditUser:${user.id}`, data)
 ```
 
 </CodeGroup>
@@ -2435,7 +2435,7 @@ function submit(e) {
 
 ## File Uploads
 
-When making requests or form submissions that include files, Inertia will automatically convert the request data into a `FormData` object. This works with the `<Form>` component, `useForm`helper, and manual router submissions.
+When making requests or form submissions that include files, Inertia will automatically convert the request data into a `FormData` object. This works with the `<Form>` component, `useForm` helper, and manual router submissions.
 
 For more information on file uploads, including progress tracking, see the [file uploads documentation](/v3/the-basics/file-uploads).
 

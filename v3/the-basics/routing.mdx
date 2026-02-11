@@ -65,7 +65,7 @@ When [server-side rendering](/v3/advanced/server-side-rendering) is enabled, you
 
 The [page object](/v3/core-concepts/the-protocol#the-page-object) includes a `url` that represents the current page's URL. By default, the Laravel adapter resolves this using the `fullUrl()` method on the `Request` instance, but strips the scheme and host so the result is a relative URL.
 
-If you need to customize how the URL is resolved, you may provide a resolver within the `urlResolver`method of the Inertia `HandleInertiaRequests` middleware.
+If you need to customize how the URL is resolved, you may provide a resolver within the `urlResolver` method of the Inertia `HandleInertiaRequests` middleware.
 
 ```php
 class HandleInertiaRequests extends Middleware
