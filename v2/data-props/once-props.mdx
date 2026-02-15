@@ -8,11 +8,24 @@ Some data rarely changes, is expensive to compute, or is simply large. Rather th
 
 To create a once prop, use the `Inertia::once()` method when returning your response. This method receives a callback that returns the prop data.
 
-```php
+<CodeGroup>
+
+```php Laravel icon="laravel"
 return Inertia::render('Billing', [
     'plans' => Inertia::once(fn () => Plan::all()),
 ]);
 ```
+
+```csharp .NET icon="dotnet"
+// InertiaCore does not have a direct Inertia.Once() method.
+// Use Inertia.Lazy() for similar deferred evaluation behavior.
+return Inertia.Render("Billing", new
+{
+    Plans = Inertia.Lazy(() => _context.Plans.ToList())
+});
+```
+
+</CodeGroup>
 
 After the client has received this prop, subsequent requests will skip resolving the callback and exclude the prop from the response. The client only remembers once props while navigating between pages that include them.
 
@@ -22,19 +35,45 @@ Navigating to a page without the once prop will forget the remembered value, and
 
 You may force a once prop to be refreshed using the `fresh()` method.
 
-```php
+<CodeGroup>
+
+```php Laravel icon="laravel"
 return Inertia::render('Billing', [
     'plans' => Inertia::once(fn () => Plan::all())->fresh(),
 ]);
 ```
 
+```csharp .NET icon="dotnet"
+// No direct equivalent in InertiaCore.
+// Use Inertia.Lazy() to evaluate data only when explicitly requested.
+return Inertia.Render("Billing", new
+{
+    Plans = Inertia.Lazy(() => _context.Plans.ToList())
+});
+```
+
+</CodeGroup>
+
 This method also accepts a boolean, allowing you to conditionally refresh the prop.
 
-```php
+<CodeGroup>
+
+```php Laravel icon="laravel"
 return Inertia::render('Billing', [
     'plans' => Inertia::once(fn () => Plan::all())->fresh($condition),
 ]);
 ```
+
+```csharp .NET icon="dotnet"
+// No direct equivalent in InertiaCore.
+// Conditionally include the prop based on your logic.
+return Inertia.Render("Billing", new
+{
+    Plans = Inertia.Lazy(() => _context.Plans.ToList())
+});
+```
+
+</CodeGroup>
 
 ## Refreshing from the Client
 
@@ -66,17 +105,32 @@ router.reload({ only: ['plans'] })
 
 You may set an expiration time using the `until()` method. This method accepts a `DateTimeInterface`, `DateInterval`, or an integer (seconds). The prop will be refreshed on a subsequent visit after the expiration time has passed.
 
-```php
+<CodeGroup>
+
+```php Laravel icon="laravel"
 return Inertia::render('Dashboard', [
     'rates' => Inertia::once(fn () => ExchangeRate::all())->until(now()->addDay()),
 ]);
 ```
 
+```csharp .NET icon="dotnet"
+// No direct equivalent in InertiaCore.
+// Use Inertia.Lazy() and manage caching/expiration separately.
+return Inertia.Render("Dashboard", new
+{
+    Rates = Inertia.Lazy(() => _context.ExchangeRates.ToList())
+});
+```
+
+</CodeGroup>
+
 ## Custom Keys
 
 You may assign a custom key to the prop using the `as()` method. This is useful when you want to share data across multiple pages while using different prop names.
 
-```php
+<CodeGroup>
+
+```php Laravel icon="laravel"
 // Team member list...
 return Inertia::render('Team/Index', [
     'memberRoles' => Inertia::once(fn () => Role::all())->as('roles'),
@@ -88,31 +142,75 @@ return Inertia::render('Team/Invite', [
 ]);
 ```
 
+```csharp .NET icon="dotnet"
+// Team member list...
+return Inertia.Render("Team/Index", new
+{
+    MemberRoles = Inertia.Lazy(() => _context.Roles.ToList())
+});
+
+// Invite form...
+return Inertia.Render("Team/Invite", new
+{
+    AvailableRoles = Inertia.Lazy(() => _context.Roles.ToList())
+});
+```
+
+</CodeGroup>
+
 Both pages share the same underlying data because they use the same custom key, so the prop is only resolved for whichever page you visit first.
 
 ## Sharing Once Props
 
 You may share once props globally using the `Inertia::share()` method.
 
-```php
+<CodeGroup>
+
+```php Laravel icon="laravel"
 Inertia::share('countries', Inertia::once(fn () => Country::all()));
 ```
 
+```csharp .NET icon="dotnet"
+Inertia.Share("countries", Inertia.Lazy(() => _context.Countries.ToList()));
+```
+
+</CodeGroup>
+
 Or, for convenience, you may use the `shareOnce()` method.
 
-```php
+<CodeGroup>
+
+```php Laravel icon="laravel"
 Inertia::shareOnce('countries', fn () => Country::all());
 ```
 
+```csharp .NET icon="dotnet"
+// No direct ShareOnce equivalent in InertiaCore.
+Inertia.Share("countries", Inertia.Lazy(() => _context.Countries.ToList()));
+```
+
+</CodeGroup>
+
 You may also chain `as()`, `fresh()`, and `until()` onto the `shareOnce` method.
 
-```php
+<CodeGroup>
+
+```php Laravel icon="laravel"
 Inertia::shareOnce('countries', fn () => Country::all())->until(now()->addDay());
 ```
 
+```csharp .NET icon="dotnet"
+// No direct equivalent in InertiaCore. Use Inertia.Share() with Inertia.Lazy().
+Inertia.Share("countries", Inertia.Lazy(() => _context.Countries.ToList()));
+```
+
+</CodeGroup>
+
 Additionally, you may define a dedicated `shareOnce()` method in your middleware. The middleware will evaluate both `share()` and `shareOnce()`, merging the results.
 
-```php
+<CodeGroup>
+
+```php Laravel icon="laravel"
 class HandleInertiaRequests extends Middleware
 {
     public function shareOnce(Request $request): array
@@ -124,6 +222,13 @@ class HandleInertiaRequests extends Middleware
 }
 ```
 
+```csharp .NET icon="dotnet"
+// In your middleware or Program.cs, share data globally using Inertia.Share().
+Inertia.Share("countries", Inertia.Lazy(() => _context.Countries.ToList()));
+```
+
+</CodeGroup>
+
 ## Prefetching
 
 Once props are compatible with [prefetching](/v2/data-props/prefetching). The client automatically includes any remembered once props in prefetched responses, so navigating to a prefetched page will already have the once props available.
@@ -134,10 +239,23 @@ Prefetched pages containing an expired once prop will be invalidated from the ca
 
 The `once()` modifier may be chained onto [deferred](/v2/data-props/deferred-props), [merge](/v2/data-props/merging-props), and [optional](/v2/data-props/partial-reloads#lazy-data-evaluation) props.
 
-```php
+<CodeGroup>
+
+```php Laravel icon="laravel"
 return Inertia::render('Dashboard', [
     'permissions' => Inertia::defer(fn () => Permission::all())->once(),
     'activity' => Inertia::merge(fn () => $user->recentActivity())->once(),
     'categories' => Inertia::optional(fn () => Category::all())->once(),
 ]);
 ```
+
+```csharp .NET icon="dotnet"
+return Inertia.Render("Dashboard", new
+{
+    Permissions = Inertia.Defer(() => _context.Permissions.ToList()),
+    Activity = Inertia.Merge(() => user.RecentActivity()),
+    Categories = Inertia.Optional(() => _context.Categories.ToList())
+});
+```
+
+</CodeGroup>

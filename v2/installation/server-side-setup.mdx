@@ -2,7 +2,7 @@
 title: Server-Side Setup
 ---
 
-The first step when installing Inertia is to configure your server-side framework. Inertia maintains an official server-side adapter for [Laravel](https://laravel.com/). For other frameworks, please see the [community adapters](/v2/installation/community-adapters).
+The first step when installing Inertia is to configure your server-side framework. Inertia maintains an official server-side adapter for [Laravel](https://laravel.com/) and a community adapter for [ASP.NET Core](https://github.com/kapi2289/InertiaCore). For other frameworks, please see the [community adapters](/v2/installation/community-adapters).
 
 Inertia is fine-tuned for Laravel, so the documentation examples on this website utilize Laravel. For examples of using Inertia with other server-side frameworks, please refer to the framework specific documentation maintained by that adapter.
 
@@ -24,15 +24,25 @@ These starter kits are the absolute fastest way to start building a new Inertia 
     <Step title="Install dependencies">
         First, install the Inertia server-side adapter using the Composer package manager.
 
-        ```bash
+        <CodeGroup>
+
+        ```bash Laravel icon="laravel"
         composer require inertiajs/inertia-laravel
         ```
+
+        ```bash .NET icon="dotnet"
+        dotnet add package AspNetCore.InertiaCore
+        ```
+
+        </CodeGroup>
     </Step>
 
     <Step title="Setup root template">
         Next, setup the root template that will be loaded on the first page visit to your application. This template should include your site's CSS and JavaScript assets, along with the `@inertia` and `@inertiaHead` directives.
 
-        ```blade
+        <CodeGroup>
+
+        ```blade Laravel icon="laravel"
         <html>
             <head>
                 <meta charset="utf-8" />
@@ -46,11 +56,29 @@ These starter kits are the absolute fastest way to start building a new Inertia 
         </html>
         ```
 
+        ```cshtml .NET icon="dotnet"
+        <html>
+            <head>
+                <meta charset="utf-8" />
+                <meta name="viewport" content="width=device-width, initial-scale=1">
+                @Vite.Input("src/app.js")
+                @await Inertia.Head(Model)
+            </head>
+            <body>
+                @await Inertia.Html(Model)
+            </body>
+        </html>
+        ```
+
+        </CodeGroup>
+
         For React applications, it's recommended to include the `@viteReactRefresh` directive before the `@vite` directive to enable Fast Refresh in development.
 
         The `@inertia` directive renders a `<div>` element with an `id` of `app`. This element serves as the mounting point for your JavaScript application. You may customize the `id` by passing a different value to the directive.
 
-        ```blade
+        <CodeGroup>
+
+        ```blade Laravel icon="laravel"
         <html>
             ...
             <body>
@@ -58,6 +86,17 @@ These starter kits are the absolute fastest way to start building a new Inertia 
             </body>
         </html>
         ```
+
+        ```cshtml .NET icon="dotnet"
+        <html>
+            ...
+            <body>
+                @await Inertia.Html(Model, "custom-app-id")
+            </body>
+        </html>
+        ```
+
+        </CodeGroup>
 
         If you change the `id` of the root element, be sure to update it [client-side](/v2/installation/client-side-setup#defining-a-root-element) as well.
 
@@ -67,13 +106,24 @@ These starter kits are the absolute fastest way to start building a new Inertia 
     <Step title="Register middleware">
         Next we need to setup the Inertia middleware. You can accomplish this by publishing the `HandleInertiaRequests` middleware to your application, which can be done using the following Artisan command.
 
-        ```sh
+        <CodeGroup>
+
+        ```sh Laravel icon="laravel"
         php artisan inertia:middleware
         ```
 
+        ```csharp .NET icon="dotnet"
+        // No command needed — register Inertia in Program.cs
+        builder.Services.AddInertia();
+        ```
+
+        </CodeGroup>
+
         Once the middleware has been published, append the `HandleInertiaRequests` middleware to the `web` middleware group in your application's `bootstrap/app.php` file.
 
-        ```php
+        <CodeGroup>
+
+        ```php Laravel icon="laravel"
         use App\Http\Middleware\HandleInertiaRequests;
 
         ->withMiddleware(function (Middleware $middleware) {
@@ -83,13 +133,31 @@ These starter kits are the absolute fastest way to start building a new Inertia 
         })
         ```
 
+        ```csharp .NET icon="dotnet"
+        // In Program.cs
+        using InertiaCore;
+        using InertiaCore.Extensions;
+
+        var builder = WebApplication.CreateBuilder(args);
+
+        builder.Services.AddInertia();
+
+        var app = builder.Build();
+
+        app.UseInertia();
+        ```
+
+        </CodeGroup>
+
         This middleware provides a `version()` method for setting your [asset version](/v2/advanced/asset-versioning), as well as a `share()` method for defining [shared data](/v2/data-props/shared-data).
     </Step>
 
     <Step title="Create your first response">
         That's it, you're all ready to go server-side! Now you're ready to start creating Inertia [pages](/v2/the-basics/pages) and rendering them via [responses](/v2/the-basics/responses).
 
-        ```php
+        <CodeGroup>
+
+        ```php Laravel icon="laravel"
         use Inertia\Inertia;
 
         class EventsController extends Controller
@@ -107,5 +175,28 @@ These starter kits are the absolute fastest way to start building a new Inertia 
             }
         }
         ```
+
+        ```csharp .NET icon="dotnet"
+        using InertiaCore;
+
+        public class EventsController : Controller
+        {
+            public IActionResult Show(int id)
+            {
+                var eventItem = _context.Events.Find(id);
+
+                return Inertia.Render("Event/Show", new {
+                    Event = new {
+                        eventItem.Id,
+                        eventItem.Title,
+                        eventItem.StartDate,
+                        eventItem.Description,
+                    },
+                });
+            }
+        }
+        ```
+
+        </CodeGroup>
     </Step>
 </Steps>

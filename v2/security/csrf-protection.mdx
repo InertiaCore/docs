@@ -68,7 +68,9 @@ Obviously, this isn't a great user experience. A better way to handle these erro
 
 When using Laravel, you may modify your application's exception handler to automatically redirect the user back to the page they were previously on while flashing a message to the session. To accomplish this, you may use the `respond` exception method in your application's `bootstrap/app.php` file.
 
-```php
+<CodeGroup>
+
+```php Laravel icon="laravel"
 use Symfony\Component\HttpFoundation\Response;
 
 ->withExceptions(function (Exceptions $exceptions) {
@@ -83,6 +85,69 @@ use Symfony\Component\HttpFoundation\Response;
     });
 });
 ```
+
+```csharp .NET icon="dotnet"
+using InertiaCore;
+using Microsoft.AspNetCore.Antiforgery;
+using Microsoft.AspNetCore.Mvc.ViewFeatures;
+
+public class CsrfMiddleware
+{
+    private readonly RequestDelegate _next;
+
+    public CsrfMiddleware(RequestDelegate next)
+    {
+        _next = next;
+    }
+
+    public async Task InvokeAsync(HttpContext context)
+    {
+        var antiforgery = context.RequestServices
+            .GetRequiredService<IAntiforgery>();
+        var method = context.Request.Method.ToUpperInvariant();
+        var isSafeMethod = method is "GET" or "HEAD"
+            or "OPTIONS" or "TRACE";
+
+        if (!isSafeMethod)
+        {
+            try
+            {
+                await antiforgery.ValidateRequestAsync(context);
+            }
+            catch (AntiforgeryValidationException)
+            {
+                var factory = context.RequestServices
+                    .GetRequiredService<ITempDataDictionaryFactory>();
+                var tempData = factory.GetTempData(context);
+                tempData["flash.error"] =
+                    "The page expired, please try again.";
+                tempData.Save();
+
+                var referrer = context.Request.Headers["Referer"]
+                    .ToString() ?? "/";
+                context.Response.StatusCode = 409;
+                context.Response.Headers["X-Inertia-Location"] =
+                    referrer;
+                return;
+            }
+        }
+
+        var tokens = antiforgery.GetAndStoreTokens(context);
+        context.Response.Cookies.Append("XSRF-TOKEN",
+            tokens.RequestToken!, new CookieOptions
+            {
+                HttpOnly = false,
+                Secure = true,
+                SameSite = SameSiteMode.Strict,
+                Path = "/"
+            });
+
+        await _next(context);
+    }
+}
+```
+
+</CodeGroup>
 
 The end result is a much better experience for your users. Instead of seeing the error modal, the user is instead presented with a message that the page "expired" and are asked to try again.
 

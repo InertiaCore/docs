@@ -89,7 +89,8 @@ export default function Welcome({ user }) {
 Given the page above, you can render the page by returning an [Inertia response](/v2/the-basics/responses) from a controller or route. In this example, let's assume this page is stored at <VueSpecific>`resources/js/Pages/User/Show.vue`</VueSpecific><ReactSpecific>`resources/js/Pages/User/Show.jsx`</ReactSpecific><SvelteSpecific>`resources/js/Pages/User/Show.svelte`</SvelteSpecific>within a Laravel application.
 </ClientSpecific>
 
-```php
+<CodeGroup>
+```php Laravel icon="laravel"
 use Inertia\Inertia;
 
 class UserController extends Controller
@@ -102,6 +103,22 @@ class UserController extends Controller
     }
 }
 ```
+
+```csharp .NET icon="dotnet"
+using InertiaCore;
+
+public class UserController : Controller
+{
+    public IActionResult Show(User user)
+    {
+        return Inertia.Render("User/Show", new {
+            User = user
+        });
+    }
+}
+```
+
+</CodeGroup>
 
 If you attempt to render a page that does not exist, the response will typically be a blank screen. To prevent this, you may set the `inertia.ensure_pages_exist` configuration option to `true`. The Laravel adapter will then throw an `Inertia\ComponentNotFoundException` when a page cannot be found.
 

@@ -140,7 +140,7 @@ When using the Vue adapters, you may also access the errors via the `$page.props
 
 By default, Inertia's Laravel adapter returns only the first validation error for each field. You may opt-in to receiving all errors by setting the `$withAllErrors` property to `true` in your middleware.
 
-```php
+```php Laravel icon="laravel"
 class HandleInertiaRequests extends Middleware
 {
     protected $withAllErrors = true;

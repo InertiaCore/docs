@@ -18,7 +18,9 @@ In addition to testing your JavaScript page components, you will likely want to 
 
 However, to make this process even easier, Inertia's Laravel adapter provides additional HTTP testing tools. Let's take a look at an example.
 
-```php
+<CodeGroup>
+
+```php Laravel icon="laravel"
 use Inertia\Testing\AssertableInertia as Assert;
 
 class PodcastsControllerTest extends TestCase
@@ -52,11 +54,66 @@ class PodcastsControllerTest extends TestCase
 }
 ```
 
+```csharp .NET icon="dotnet"
+using System.Text.Json;
+using Microsoft.AspNetCore.Mvc.Testing;
+
+public class PodcastsControllerTest
+    : IClassFixture<WebApplicationFactory<Program>>
+{
+    private readonly HttpClient _client;
+
+    public PodcastsControllerTest(
+        WebApplicationFactory<Program> factory)
+    {
+        _client = factory.CreateClient();
+    }
+
+    [Fact]
+    public async Task CanViewPodcast()
+    {
+        var request = new HttpRequestMessage(
+            HttpMethod.Get, "/podcasts/41");
+        request.Headers.Add("X-Inertia", "true");
+        request.Headers.Add("X-Inertia-Version", "1");
+
+        var response = await _client.SendAsync(request);
+        response.EnsureSuccessStatusCode();
+
+        var content = await response.Content
+            .ReadAsStringAsync();
+        var page = JsonDocument.Parse(content)
+            .RootElement;
+
+        Assert.Equal("Podcasts/Show",
+            page.GetProperty("component").GetString());
+
+        var podcast = page.GetProperty("props")
+            .GetProperty("podcast");
+        Assert.Equal("The Laravel Podcast",
+            podcast.GetProperty("subject").GetString());
+
+        var host = podcast.GetProperty("host");
+        Assert.Equal(1,
+            host.GetProperty("id").GetInt32());
+        Assert.Equal("Matt Stauffer",
+            host.GetProperty("name").GetString());
+
+        var subscribers = podcast.GetProperty("subscribers");
+        Assert.Equal(7, subscribers.GetArrayLength());
+    }
+}
+```
+
+</CodeGroup>
+
 As you can see in the example above, you may use these assertion methods to assert against the content of the data provided to the Inertia response. In addition, you may assert that array data has a given length as well as scope your assertions.
 
 You may use the `inertiaProps` method to retrieve the props returned in the response. You can pass a key to retrieve a specific property, and nested properties are supported using "dot" notation.
 
-```php
+<CodeGroup>
+
+```php Laravel icon="laravel"
 $response = $this->get('/podcasts/41');
 
 // Returns all props...
@@ -69,9 +126,34 @@ $response->inertiaProps('podcast');
 $response->inertiaProps('podcast.id');
 ```
 
+```csharp .NET icon="dotnet"
+var request = new HttpRequestMessage(
+    HttpMethod.Get, "/podcasts/41");
+request.Headers.Add("X-Inertia", "true");
+request.Headers.Add("X-Inertia-Version", "1");
+
+var response = await _client.SendAsync(request);
+var content = await response.Content.ReadAsStringAsync();
+var page = JsonDocument.Parse(content).RootElement;
+
+// Returns all props...
+var props = page.GetProperty("props");
+
+// Returns a specific prop...
+var podcast = props.GetProperty("podcast");
+
+// Returns a nested prop...
+var podcastId = props.GetProperty("podcast")
+    .GetProperty("id");
+```
+
+</CodeGroup>
+
 Let's dig into the `assertInertia` method and the available assertions in detail. First, to assert that the Inertia response has a property, you may use the `has` method. You can think of this method as being similar to PHP's `isset` function.
 
-```php
+<CodeGroup>
+
+```php Laravel icon="laravel"
 $response->assertInertia(fn (Assert $page) => $page
     // Checking if a root-level property has 7 items...
     ->has('podcasts', 7)
@@ -80,10 +162,26 @@ $response->assertInertia(fn (Assert $page) => $page
     ->has('podcast.subscribers', 7)
 );
 ```
+
+```csharp .NET icon="dotnet"
+var props = page.GetProperty("props");
+
+// Checking if a root-level property has 7 items...
+Assert.Equal(7, props.GetProperty("podcasts")
+    .GetArrayLength());
+
+// Checking nested properties...
+Assert.Equal(7, props.GetProperty("podcast")
+    .GetProperty("subscribers").GetArrayLength());
+```
+
+</CodeGroup>
 
 To assert that an Inertia property has a specified amount of items, you may provide the expected size as the second argument to the `has` method.
 
-```php
+<CodeGroup>
+
+```php Laravel icon="laravel"
 $response->assertInertia(fn (Assert $page) => $page
     // Checking if a root-level property has 7 items...
     ->has('podcasts', 7)
@@ -93,9 +191,25 @@ $response->assertInertia(fn (Assert $page) => $page
 );
 ```
 
+```csharp .NET icon="dotnet"
+var props = page.GetProperty("props");
+
+// Checking if a root-level property has 7 items...
+Assert.Equal(7, props.GetProperty("podcasts")
+    .GetArrayLength());
+
+// Checking nested properties...
+Assert.Equal(7, props.GetProperty("podcast")
+    .GetProperty("subscribers").GetArrayLength());
+```
+
+</CodeGroup>
+
 The `has` method may also be used to scope properties in order to lessen repetition when asserting against nested properties.
 
-```php
+<CodeGroup>
+
+```php Laravel icon="laravel"
 $response->assertInertia(fn (Assert $page) => $page
     // Creating a single-level property scope...
     ->has('message', fn (Assert $page) => $page
@@ -115,9 +229,33 @@ $response->assertInertia(fn (Assert $page) => $page
 );
 ```
 
+```csharp .NET icon="dotnet"
+var props = page.GetProperty("props");
+
+// Navigating into nested properties...
+var message = props.GetProperty("message");
+
+Assert.True(message.TryGetProperty("subject",
+    out _));
+var comments = message.GetProperty("comments");
+Assert.Equal(5, comments.GetArrayLength());
+
+// Scoping into the first comment...
+var firstComment = comments[0];
+Assert.True(firstComment.TryGetProperty("body",
+    out _));
+var files = firstComment.GetProperty("files");
+Assert.Equal(1, files.GetArrayLength());
+Assert.True(files[0].TryGetProperty("url", out _));
+```
+
+</CodeGroup>
+
 When scoping into Inertia properties that are arrays or collections, you may also assert that a specified number of items are present in addition to scoping into the first item.
 
-```php
+<CodeGroup>
+
+```php Laravel icon="laravel"
 $response->assertInertia(fn (Assert $page) => $page
     // Assert that there are 5 comments and automatically scope into the first comment...
     ->has('comments', 5, fn (Assert $page) => $page
@@ -127,9 +265,26 @@ $response->assertInertia(fn (Assert $page) => $page
 );
 ```
 
+```csharp .NET icon="dotnet"
+var props = page.GetProperty("props");
+
+// Assert that there are 5 comments and scope into
+// the first comment...
+var comments = props.GetProperty("comments");
+Assert.Equal(5, comments.GetArrayLength());
+
+var firstComment = comments[0];
+Assert.True(firstComment.TryGetProperty("body",
+    out _));
+```
+
+</CodeGroup>
+
 To assert that an Inertia property has an expected value, you may use the `where` assertion.
 
-```php
+<CodeGroup>
+
+```php Laravel icon="laravel"
 $response->assertInertia(fn (Assert $page) => $page
     ->has('message', fn (Assert $page) => $page
         // Assert that the subject prop matches the given message...
@@ -141,9 +296,28 @@ $response->assertInertia(fn (Assert $page) => $page
 );
 ```
 
+```csharp .NET icon="dotnet"
+var message = props.GetProperty("message");
+
+// Assert that the subject prop matches the given
+// message...
+Assert.Equal("This is an example message",
+    message.GetProperty("subject").GetString());
+
+// Or, assert against deeply nested values...
+Assert.Equal("example-attachment.pdf",
+    message.GetProperty("comments")[0]
+        .GetProperty("files")[0]
+        .GetProperty("name").GetString());
+```
+
+</CodeGroup>
+
 Inertia's testing methods will automatically fail when you haven't interacted with at least one of the props in a scope. While this is generally useful, you might run into situations where you're working with unreliable data (such as from an external feed), or with data that you really don't want interact with in order to keep your test simple. For these situations, the `etc` method exists.
 
-```php
+<CodeGroup>
+
+```php Laravel icon="laravel"
 $response->assertInertia(fn (Assert $page) => $page
     ->has('message', fn (Assert $page) => $page
         ->has('subject')
@@ -153,9 +327,25 @@ $response->assertInertia(fn (Assert $page) => $page
 );
 ```
 
+```csharp .NET icon="dotnet"
+var message = props.GetProperty("message");
+
+// Assert specific properties exist without needing
+// to assert against every property...
+Assert.True(message.TryGetProperty("subject",
+    out _));
+Assert.True(message.TryGetProperty("comments",
+    out _));
+// Other properties may exist but are not asserted
+```
+
+</CodeGroup>
+
 The `missing` method is the exact opposite of the `has` method, ensuring that the property does not exist. This method makes a great companion to the `etc` method.
 
-```php
+<CodeGroup>
+
+```php Laravel icon="laravel"
 $response->assertInertia(fn (Assert $page) => $page
     ->has('message', fn (Assert $page) => $page
         ->has('subject')
@@ -165,11 +355,26 @@ $response->assertInertia(fn (Assert $page) => $page
 );
 ```
 
+```csharp .NET icon="dotnet"
+var message = props.GetProperty("message");
+
+Assert.True(message.TryGetProperty("subject",
+    out _));
+
+// Assert that the property does not exist...
+Assert.False(message.TryGetProperty("published_at",
+    out _));
+```
+
+</CodeGroup>
+
 ### Testing Partial Reloads
 
 You may use the `reloadOnly` and `reloadExcept` methods to test how your application responds to [partial reloads](/v2/data-props/partial-reloads). These methods perform a follow-up request and allow you to make assertions against the response.
 
-```php
+<CodeGroup>
+
+```php Laravel icon="laravel"
 $response->assertInertia(fn (Assert $page) => $page
     ->has('orders')
     ->missing('statuses')
@@ -180,13 +385,47 @@ $response->assertInertia(fn (Assert $page) => $page
 );
 ```
 
+```csharp .NET icon="dotnet"
+// Test partial reloads by sending a follow-up
+// request with the X-Inertia-Partial-Data header
+var props = page.GetProperty("props");
+Assert.True(props.TryGetProperty("orders", out _));
+Assert.False(props.TryGetProperty("statuses",
+    out _));
+
+// Follow-up partial reload request
+var partialRequest = new HttpRequestMessage(
+    HttpMethod.Get, "/orders");
+partialRequest.Headers.Add("X-Inertia", "true");
+partialRequest.Headers.Add("X-Inertia-Version", "1");
+partialRequest.Headers.Add(
+    "X-Inertia-Partial-Data", "statuses");
+partialRequest.Headers.Add(
+    "X-Inertia-Partial-Component", "Orders/Index");
+
+var reload = await _client.SendAsync(partialRequest);
+var reloadPage = JsonDocument.Parse(
+    await reload.Content.ReadAsStringAsync())
+    .RootElement;
+var reloadProps = reloadPage.GetProperty("props");
+
+Assert.False(reloadProps.TryGetProperty("orders",
+    out _));
+Assert.Equal(5, reloadProps.GetProperty("statuses")
+    .GetArrayLength());
+```
+
+</CodeGroup>
+
 Instead of passing a single prop as a string, you may also pass an array of props to `reloadOnly` or `reloadExcept`.
 
 ### Testing Deferred Props
 
 You may use the `loadDeferredProps` method to test how your application responds to [deferred props](/v2/data-props/deferred-props). This method performs a follow-up request to load the deferred properties and allows you to make assertions against the response.
 
-```php
+<CodeGroup>
+
+```php Laravel icon="laravel"
 $response->assertInertia(fn (Assert $page) => $page
     ->has('users')
     ->has('roles')
@@ -198,9 +437,45 @@ $response->assertInertia(fn (Assert $page) => $page
 );
 ```
 
+```csharp .NET icon="dotnet"
+var props = page.GetProperty("props");
+Assert.True(props.TryGetProperty("users", out _));
+Assert.True(props.TryGetProperty("roles", out _));
+Assert.False(props.TryGetProperty("permissions",
+    out _));
+
+// Load deferred props via a partial reload request
+var deferredRequest = new HttpRequestMessage(
+    HttpMethod.Get, "/current-url");
+deferredRequest.Headers.Add("X-Inertia", "true");
+deferredRequest.Headers.Add(
+    "X-Inertia-Version", "1");
+deferredRequest.Headers.Add(
+    "X-Inertia-Partial-Data", "permissions");
+deferredRequest.Headers.Add(
+    "X-Inertia-Partial-Component", "ComponentName");
+
+var deferredResponse = await _client
+    .SendAsync(deferredRequest);
+var deferredPage = JsonDocument.Parse(
+    await deferredResponse.Content
+        .ReadAsStringAsync()).RootElement;
+var deferredProps = deferredPage
+    .GetProperty("props");
+
+Assert.True(deferredProps.TryGetProperty(
+    "permissions", out var permissions));
+Assert.Equal("edit users",
+    permissions[0].GetProperty("name").GetString());
+```
+
+</CodeGroup>
+
 You may also load specific deferred prop groups by passing the group name as the first argument to the `loadDeferredProps` method.
 
-```php
+<CodeGroup>
+
+```php Laravel icon="laravel"
 $response->assertInertia(fn (Assert $page) => $page
     ->has('users')
     ->missing('teams')
@@ -213,9 +488,45 @@ $response->assertInertia(fn (Assert $page) => $page
 );
 ```
 
+```csharp .NET icon="dotnet"
+var props = page.GetProperty("props");
+Assert.True(props.TryGetProperty("users", out _));
+Assert.False(props.TryGetProperty("teams", out _));
+Assert.False(props.TryGetProperty("projects",
+    out _));
+
+// Load specific deferred prop group
+var deferredRequest = new HttpRequestMessage(
+    HttpMethod.Get, "/current-url");
+deferredRequest.Headers.Add("X-Inertia", "true");
+deferredRequest.Headers.Add(
+    "X-Inertia-Version", "1");
+deferredRequest.Headers.Add(
+    "X-Inertia-Partial-Data", "teams,projects");
+deferredRequest.Headers.Add(
+    "X-Inertia-Partial-Component", "ComponentName");
+
+var reload = await _client.SendAsync(deferredRequest);
+var reloadPage = JsonDocument.Parse(
+    await reload.Content.ReadAsStringAsync())
+    .RootElement;
+var reloadProps = reloadPage.GetProperty("props");
+
+Assert.Equal(5, reloadProps.GetProperty("teams")
+    .GetArrayLength());
+Assert.True(reloadProps.TryGetProperty("projects",
+    out _));
+Assert.False(reloadProps.TryGetProperty(
+    "permissions", out _));
+```
+
+</CodeGroup>
+
 Instead of passing a single group as a string, you may also pass an array of groups to `loadDeferredProps`.
 
-```php
+<CodeGroup>
+
+```php Laravel icon="laravel"
 $response->assertInertia(fn (Assert $page) => $page
     ->loadDeferredProps(['default', 'attributes'], fn (Assert $reload) => $reload
         ->has('permissions')
@@ -225,11 +536,42 @@ $response->assertInertia(fn (Assert $page) => $page
 );
 ```
 
+```csharp .NET icon="dotnet"
+// Load multiple deferred prop groups
+var deferredRequest = new HttpRequestMessage(
+    HttpMethod.Get, "/current-url");
+deferredRequest.Headers.Add("X-Inertia", "true");
+deferredRequest.Headers.Add(
+    "X-Inertia-Version", "1");
+deferredRequest.Headers.Add(
+    "X-Inertia-Partial-Data",
+    "permissions,teams,projects");
+deferredRequest.Headers.Add(
+    "X-Inertia-Partial-Component", "ComponentName");
+
+var reload = await _client.SendAsync(deferredRequest);
+var reloadPage = JsonDocument.Parse(
+    await reload.Content.ReadAsStringAsync())
+    .RootElement;
+var reloadProps = reloadPage.GetProperty("props");
+
+Assert.True(reloadProps.TryGetProperty(
+    "permissions", out _));
+Assert.True(reloadProps.TryGetProperty("teams",
+    out _));
+Assert.True(reloadProps.TryGetProperty("projects",
+    out _));
+```
+
+</CodeGroup>
+
 ### Testing Flash Data
 
 You may use the `hasFlash` and `missingFlash` methods to test [flash data](/v2/data-props/flash-data) in your Inertia responses.
 
-```php
+<CodeGroup>
+
+```php Laravel icon="laravel"
 $response->assertInertia(fn (Assert $page) => $page
     // Assert flash data exists...
     ->hasFlash('message')
@@ -245,11 +587,36 @@ $response->assertInertia(fn (Assert $page) => $page
 );
 ```
 
+```csharp .NET icon="dotnet"
+var props = page.GetProperty("props");
+var flash = props.GetProperty("flash");
+
+// Assert flash data exists...
+Assert.True(flash.TryGetProperty("message",
+    out _));
+
+// Assert flash data has a specific value...
+Assert.Equal("Item saved!",
+    flash.GetProperty("message").GetString());
+
+// Nested values...
+Assert.Equal("success",
+    flash.GetProperty("notification")
+        .GetProperty("type").GetString());
+
+// Assert flash data does not exist...
+Assert.False(flash.TryGetProperty("error", out _));
+```
+
+</CodeGroup>
+
 #### Redirect Responses
 
 The `hasFlash` and `missingFlash` methods above only work on rendered Inertia page responses. For redirect responses, you may use the `assertInertiaFlash` and `assertInertiaFlashMissing` methods directly on the test response to assert against the session's flash data.
 
-```php
+<CodeGroup>
+
+```php Laravel icon="laravel"
 $response = $this->post('/users');
 
 $response->assertRedirect('/dashboard')
@@ -258,3 +625,36 @@ $response->assertRedirect('/dashboard')
     ->assertInertiaFlash('notification.type', 'success')
     ->assertInertiaFlashMissing('error');
 ```
+
+```csharp .NET icon="dotnet"
+var response = await _client.PostAsync("/users",
+    new StringContent("{}"));
+
+// Assert redirect
+Assert.Equal(HttpStatusCode.Redirect,
+    response.StatusCode);
+Assert.Equal("/dashboard",
+    response.Headers.Location?.ToString());
+
+// Follow the redirect and check flash data
+// in the Inertia response
+var redirectRequest = new HttpRequestMessage(
+    HttpMethod.Get, response.Headers.Location);
+redirectRequest.Headers.Add("X-Inertia", "true");
+redirectRequest.Headers.Add(
+    "X-Inertia-Version", "1");
+
+var redirectResponse = await _client
+    .SendAsync(redirectRequest);
+var page = JsonDocument.Parse(
+    await redirectResponse.Content
+        .ReadAsStringAsync()).RootElement;
+var flash = page.GetProperty("props")
+    .GetProperty("flash");
+
+Assert.Equal("User created!",
+    flash.GetProperty("message").GetString());
+Assert.False(flash.TryGetProperty("error", out _));
+```
+
+</CodeGroup>

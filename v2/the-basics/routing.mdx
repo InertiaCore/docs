@@ -10,9 +10,20 @@ When using Inertia, all of your application's routes are defined server-side. Th
 
 If you have a [page](/v2/the-basics/pages) that doesn't need a corresponding controller method, like an "FAQ" or "about" page, you can route directly to a component via the `Route::inertia()` method.
 
-```php
+<CodeGroup>
+```php Laravel icon="laravel"
 Route::inertia('/about', 'About');
 ```
+
+```csharp .NET icon="dotnet"
+// In your controller, create a dedicated action
+public IActionResult About()
+{
+    return Inertia.Render("About");
+}
+```
+
+</CodeGroup>
 
 ## Generating URLs
 
@@ -20,7 +31,8 @@ Some server-side frameworks allow you to generate URLs from named routes. Howeve
 
 The first option is to generate URLs server-side and include them as props. Notice in this example how we're passing the `edit_url` and `create_url` to the `Users/Index` component.
 
-```php
+<CodeGroup>
+```php Laravel icon="laravel"
 class UsersController extends Controller
 {
     public function index()
@@ -37,6 +49,33 @@ class UsersController extends Controller
     }
 }
 ```
+
+```csharp .NET icon="dotnet"
+public class UsersController : Controller
+{
+    private readonly AppDbContext _context;
+
+    public UsersController(AppDbContext context)
+    {
+        _context = context;
+    }
+
+    public IActionResult Index()
+    {
+        return Inertia.Render("Users/Index", new {
+            Users = _context.Users.Select(u => new {
+                u.Id,
+                u.Name,
+                u.Email,
+                EditUrl = Url.Action("Edit", "Users", new { id = u.Id }),
+            }).ToList(),
+            CreateUrl = Url.Action("Create", "Users"),
+        });
+    }
+}
+```
+
+</CodeGroup>
 
 When using Laravel, you have several options to make your server-side routes available to your client-side code:
 
@@ -67,7 +106,8 @@ The [page object](/v2/core-concepts/the-protocol#the-page-object) includes a `ur
 
 If you need to customize how the URL is resolved, you may provide a resolver within the `urlResolver`method of the Inertia `HandleInertiaRequests` middleware.
 
-```php
+<CodeGroup>
+```php Laravel icon="laravel"
 class HandleInertiaRequests extends Middleware
 {
     public function urlResolver()
@@ -79,10 +119,39 @@ class HandleInertiaRequests extends Middleware
 }
 ```
 
+```csharp .NET icon="dotnet"
+// In Program.cs, configure the URL resolver
+builder.Services.AddInertia(options =>
+{
+    options.ResolveUrl = (context) =>
+    {
+        // Return the URL for the request...
+        return context.Request.Path;
+    };
+});
+```
+
+</CodeGroup>
+
 Alternatively, you may define the resolver using the `Inertia::resolveUrlUsing()` method.
 
-```php
+<CodeGroup>
+```php Laravel icon="laravel"
 Inertia::resolveUrlUsing(function (Request $request) {
     // Return the URL for the request...
 });
 ```
+
+```csharp .NET icon="dotnet"
+// In Program.cs, configure the URL resolver
+builder.Services.AddInertia(options =>
+{
+    options.ResolveUrl = (context) =>
+    {
+        // Return the URL for the request...
+        return context.Request.Path;
+    };
+});
+```
+
+</CodeGroup>

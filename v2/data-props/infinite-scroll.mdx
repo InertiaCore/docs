@@ -8,13 +8,30 @@ Inertia's infinite scroll feature loads additional pages of content as users scr
 
 To configure your paginated data for infinite scrolling, you should use the `Inertia::scroll()`method when returning your response. This method automatically configures the proper merge behavior and normalizes pagination metadata for the frontend component.
 
-```php
+<CodeGroup>
+
+```php Laravel icon="laravel"
 Route::get('/users', function () {
     return Inertia::render('Users/Index', [
         'users' => Inertia::scroll(fn () => User::paginate())
     ]);
 });
 ```
+
+```csharp .NET icon="dotnet"
+public IActionResult Index()
+{
+    var users = _context.Users
+        .Paginate(Request);
+
+    return Inertia.Render("Users/Index", new
+    {
+        Users = Inertia.Merge(users)
+    });
+}
+```
+
+</CodeGroup>
 
 The `Inertia::scroll()` method works with Laravel's `paginate()`, `simplePaginate()`, and `cursorPaginate()` methods, as well as pagination data wrapped in [Eloquent API resources](https://laravel.com/docs/eloquent-resources). For more details, check out the [Inertia::scroll() method](#inertia-scroll-method) documentation.
 
@@ -879,7 +896,9 @@ The infinite scroll component works within any scrollable container, not just th
 
 Sometimes you may need to render multiple infinite scroll components on a single page. However, if both components use the default `page` query parameter for [URL synchronization](#url-synchronization), they will conflict with each other. To resolve this, instruct each paginator to use a custom `pageName`.
 
-```php
+<CodeGroup>
+
+```php Laravel icon="laravel"
 Route::get('/dashboard', function () {
     return Inertia::render('Dashboard', [
         'users' => Inertia::scroll(
@@ -891,6 +910,22 @@ Route::get('/dashboard', function () {
     ]);
 });
 ```
+
+```csharp .NET icon="dotnet"
+public IActionResult Dashboard()
+{
+    var users = _context.Users.Paginate(Request);
+    var orders = _context.Orders.Paginate(Request);
+
+    return Inertia.Render("Dashboard", new
+    {
+        Users = Inertia.Merge(users),
+        Orders = Inertia.Merge(orders)
+    });
+}
+```
+
+</CodeGroup>
 
 The `Inertia::scroll()` method automatically detects the `pageName` from each paginator, allowing both scroll containers to maintain independent pagination state. This results in URLs like `?users=2&orders=3` instead of conflicting `?page=` parameters.
 
@@ -980,7 +1015,9 @@ The component exposes the following methods:
 
 The `Inertia::scroll()` method provides server-side configuration for infinite scrolling. It automatically configures the proper merge behavior so that new data is appended or prepended to existing content instead of replacing it, and normalizes pagination metadata for the frontend component.
 
-```php
+<CodeGroup>
+
+```php Laravel icon="laravel"
 // Works with all Laravel pagination methods...
 Inertia::scroll(User::paginate(20));
 Inertia::scroll(User::simplePaginate(20));
@@ -990,9 +1027,18 @@ Inertia::scroll(User::cursorPaginate(20));
 Inertia::scroll(UserResource::collection(User::paginate(20)));
 ```
 
+```csharp .NET icon="dotnet"
+// Use Inertia.Merge() for mergeable pagination data...
+Inertia.Merge(_context.Users.Paginate(Request, perPage: 20));
+```
+
+</CodeGroup>
+
 If you don't use Laravel's paginator or use a different transformation layer, you may use the additional arguments that `scroll()` accepts.
 
-```php
+<CodeGroup>
+
+```php Laravel icon="laravel"
 // Customize the data wrapper key (defaults to 'data')...
 Inertia::scroll($customPaginatedData, wrapper: 'items');
 
@@ -1000,9 +1046,18 @@ Inertia::scroll($customPaginatedData, wrapper: 'items');
 Inertia::scroll($data, metadata: $metadataProvider);
 ```
 
+```csharp .NET icon="dotnet"
+// Use Inertia.Merge() with your custom paginated data...
+Inertia.Merge(customPaginatedData);
+```
+
+</CodeGroup>
+
 The metadata parameter accepts an instance of `ProvidesScrollMetadata` or a callback that returns such an instance. The callback receives the `$data` parameter. This is useful when integrating with third-party pagination libraries like Fractal.
 
-```php
+<CodeGroup>
+
+```php Laravel icon="laravel"
 use League\Fractal\Resource\Collection;
 
 class FractalScrollMetadata implements ProvidesScrollMetadata
@@ -1015,9 +1070,18 @@ class FractalScrollMetadata implements ProvidesScrollMetadata
 }
 ```
 
+```csharp .NET icon="dotnet"
+// InertiaCore does not have a direct equivalent of ProvidesScrollMetadata.
+// Use Inertia.Merge() with your own pagination metadata.
+```
+
+</CodeGroup>
+
 You may then use this custom metadata provider in your scroll function.
 
-```php
+<CodeGroup>
+
+```php Laravel icon="laravel"
 // Using an instance directly
 Inertia::scroll($data, metadata: new FractalScrollMetadata($data));
 
@@ -1028,9 +1092,18 @@ Inertia::scroll(
 );
 ```
 
+```csharp .NET icon="dotnet"
+// Use Inertia.Merge() with a callback for deferred evaluation...
+Inertia.Merge(() => TransformData(data));
+```
+
+</CodeGroup>
+
 To avoid repeating this setup in multiple controllers, you may define a macro.
 
-```php
+<CodeGroup>
+
+```php Laravel icon="laravel"
 // In your AppServiceProvider's boot method
 Inertia::macro('fractalScroll', function (Collection $data) {
     return Inertia::scroll(
@@ -1044,3 +1117,19 @@ return Inertia::render('Users/Index', [
     'users' => Inertia::fractalScroll($fractalCollection)
 ]);
 ```
+
+```csharp .NET icon="dotnet"
+// Create a helper method in a base controller or service...
+public static MergeProp MergeCollection(object data)
+{
+    return Inertia.Merge(data);
+}
+
+// Then use it in your controllers...
+return Inertia.Render("Users/Index", new
+{
+    Users = MergeCollection(fractalCollection)
+});
+```
+
+</CodeGroup>

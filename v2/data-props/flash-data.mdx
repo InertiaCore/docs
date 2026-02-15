@@ -10,7 +10,9 @@ Sometimes you may wish to send one-time data to your frontend that shouldn't rea
 
 You may flash data using the `Inertia::flash()` method, passing a key and value or an array of key-value pairs.
 
-```php
+<CodeGroup>
+
+```php Laravel icon="laravel"
 public function store(Request $request)
 {
     $user = User::create($request->validated());
@@ -27,15 +29,44 @@ public function store(Request $request)
 }
 ```
 
+```csharp .NET icon="dotnet"
+public IActionResult Store(CreateUserRequest request)
+{
+    var user = _context.Users.Add(new User { /* ... */ });
+    _context.SaveChanges();
+
+    TempData["message"] = "User created successfully!";
+
+    // Or flash multiple values using TempData...
+    TempData["message"] = "User created!";
+    TempData["newUserId"] = user.Entity.Id;
+
+    return RedirectToAction("Index");
+}
+```
+
+</CodeGroup>
+
 Chaining with `back()` is also supported.
 
-```php
+<CodeGroup>
+
+```php Laravel icon="laravel"
 return Inertia::flash('newUserId', $user->id)->back();
 ```
 
+```csharp .NET icon="dotnet"
+TempData["newUserId"] = user.Id;
+return RedirectToAction("Index");
+```
+
+</CodeGroup>
+
 You may also chain `flash()` onto `render()`, or vice versa.
 
-```php
+<CodeGroup>
+
+```php Laravel icon="laravel"
 return Inertia::render('Projects/Index', [
     'projects' => $projects,
 ])->flash('highlight', $project->id);
@@ -45,6 +76,16 @@ return Inertia::render('Projects/Index', [
 return Inertia::flash('highlight', $project->id)
     ->render('Projects/Index', ['projects' => $projects]);
 ```
+
+```csharp .NET icon="dotnet"
+TempData["highlight"] = project.Id;
+
+return Inertia.Render("Projects/Index", new {
+    Projects = projects,
+});
+```
+
+</CodeGroup>
 
 Flash data is scoped to the current request. The middleware automatically persists it to the session when redirecting. After the flash data is sent to the client, it is cleared and will not appear in subsequent requests.
 

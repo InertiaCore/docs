@@ -6,7 +6,9 @@ When using Inertia, authorization is best handled server-side in your applicatio
 
 The simplest approach to solving this problem is to pass the results of your authorization checks as props to your page components.
 
-```php
+<CodeGroup>
+
+```php Laravel icon="laravel"
 class UsersController extends Controller
 {
     public function index()
@@ -29,3 +31,50 @@ class UsersController extends Controller
     }
 }
 ```
+
+```csharp .NET icon="dotnet"
+using InertiaCore;
+using Microsoft.AspNetCore.Identity;
+
+public class UsersController : Controller
+{
+    private readonly UserManager<User> _userManager;
+    private readonly IAuthorizationService _authorizationService;
+
+    public UsersController(
+        UserManager<User> userManager,
+        IAuthorizationService authorizationService)
+    {
+        _userManager = userManager;
+        _authorizationService = authorizationService;
+    }
+
+    public async Task<IActionResult> Index()
+    {
+        var currentUser = await _userManager.GetUserAsync(User);
+        var users = _context.Users.ToList();
+
+        return Inertia.Render("Users/Index", new
+        {
+            Can = new
+            {
+                CreateUser = (await _authorizationService
+                    .AuthorizeAsync(User, "CreateUser")).Succeeded
+            },
+            Users = users.Select(user => new
+            {
+                user.FirstName,
+                user.LastName,
+                user.Email,
+                Can = new
+                {
+                    EditUser = (_authorizationService
+                        .AuthorizeAsync(User, user, "EditUser")).Result.Succeeded
+                }
+            })
+        });
+    }
+}
+```
+
+</CodeGroup>

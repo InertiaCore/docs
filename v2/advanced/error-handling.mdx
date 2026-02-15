@@ -33,7 +33,9 @@ In production you will want to return a proper Inertia error response instead of
 
 When building Laravel applications, you can accomplish this by using the `respond` exception method in your application's `bootstrap/app.php` file.
 
-```php
+<CodeGroup>
+
+```php Laravel icon="laravel"
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Inertia\Inertia;
@@ -56,6 +58,74 @@ use Inertia\Inertia;
     });
 })
 ```
+
+```csharp .NET icon="dotnet"
+using InertiaCore;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Abstractions;
+using Microsoft.AspNetCore.Routing;
+
+public class ExceptionMiddleware
+{
+    private readonly RequestDelegate _next;
+    private readonly IWebHostEnvironment _env;
+
+    public ExceptionMiddleware(
+        RequestDelegate next,
+        IWebHostEnvironment env)
+    {
+        _next = next;
+        _env = env;
+    }
+
+    public async Task InvokeAsync(HttpContext context)
+    {
+        try
+        {
+            await _next(context);
+
+            if (context.Response.StatusCode == 404
+                && !context.Response.HasStarted)
+            {
+                context.Response.StatusCode = 404;
+                var result = Inertia.Render("ErrorPage",
+                    new { Status = 404 });
+                await result.ExecuteResultAsync(
+                    GetActionContext(context));
+            }
+        }
+        catch (Exception ex)
+        {
+            if (!_env.IsDevelopment())
+            {
+                context.Response.StatusCode = 500;
+                var result = Inertia.Render("ErrorPage",
+                    new { Status = 500 });
+                await result.ExecuteResultAsync(
+                    GetActionContext(context));
+            }
+            else
+            {
+                throw;
+            }
+        }
+    }
+
+    private static ActionContext GetActionContext(
+        HttpContext context)
+    {
+        var routeData = context.GetRouteData()
+            ?? new RouteData();
+        return new ActionContext(context, routeData,
+            new ActionDescriptor());
+    }
+}
+
+// Register in Program.cs:
+// app.UseMiddleware<ExceptionMiddleware>();
+```
+
+</CodeGroup>
 
 You may have noticed we're returning an `ErrorPage` page component in the example above. You'll need to actually create this component, which will serve as the generic error page for your application. Here's an example error component you can use as a starting point.
 

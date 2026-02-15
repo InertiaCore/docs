@@ -8,7 +8,9 @@ Inertia's deferred props feature allows you to defer the loading of certain page
 
 To defer a prop, you can use the `Inertia::defer()` method when returning your response. This method receives a callback that returns the prop data. The callback will be executed in a separate request after the initial page render.
 
-```php
+<CodeGroup>
+
+```php Laravel icon="laravel"
 Route::get('/users', function () {
     return Inertia::render('Users/Index', [
         'users' => User::all(),
@@ -18,11 +20,26 @@ Route::get('/users', function () {
 });
 ```
 
+```csharp .NET icon="dotnet"
+public IActionResult Index()
+{
+    return Inertia.Render("Users/Index", new {
+        Users = _context.Users.ToList(),
+        Roles = _context.Roles.ToList(),
+        Permissions = Inertia.Defer(() => _context.Permissions.ToList()),
+    });
+}
+```
+
+</CodeGroup>
+
 ### Grouping Requests
 
 By default, all deferred props get fetched in one request after the initial page is rendered, but you can choose to fetch data in parallel by grouping props together.
 
-```php
+<CodeGroup>
+
+```php Laravel icon="laravel"
 Route::get('/users', function () {
     return Inertia::render('Users/Index', [
         'users' => User::all(),
@@ -34,6 +51,22 @@ Route::get('/users', function () {
     ]);
 });
 ```
+
+```csharp .NET icon="dotnet"
+public IActionResult Index()
+{
+    return Inertia.Render("Users/Index", new {
+        Users = _context.Users.ToList(),
+        Roles = _context.Roles.ToList(),
+        Permissions = Inertia.Defer(() => _context.Permissions.ToList()),
+        Teams = Inertia.Defer(() => _context.Teams.ToList(), group: "attributes"),
+        Projects = Inertia.Defer(() => _context.Projects.ToList(), group: "attributes"),
+        Tasks = Inertia.Defer(() => _context.Tasks.ToList(), group: "attributes"),
+    });
+}
+```
+
+</CodeGroup>
 
 In the example above, the `teams`, `projects`, and `tasks` props will be fetched in one request, while the `permissions` prop will be fetched in a separate request in parallel. Group names are arbitrary strings and can be anything you choose.
 
@@ -180,10 +213,21 @@ export default () => (
 
 You may chain the `once()` modifier onto a deferred prop to ensure the data is resolved only once and remembered by the client across subsequent navigations.
 
-```php
+<CodeGroup>
+
+```php Laravel icon="laravel"
 return Inertia::render('Dashboard', [
     'stats' => Inertia::defer(fn () => Stats::generate())->once(),
 ]);
 ```
+
+```csharp .NET icon="dotnet"
+return Inertia.Render("Dashboard", new {
+    Stats = Inertia.Defer(() => Stats.Generate()),
+    // Chain .Once() if supported by InertiaCore
+});
+```
+
+</CodeGroup>
 
 For more information on once props, see the [once props](/v2/data-props/once-props) documentation.

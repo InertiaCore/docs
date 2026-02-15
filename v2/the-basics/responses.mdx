@@ -8,7 +8,8 @@ Creating an Inertia response is simple. To get started, invoke the `Inertia::ren
 
 In the example below, we will pass a single property (`event`) which contains four attributes (`id`, `title`, `start_date` and `description`) to the `Event/Show` page component.
 
-```php
+<CodeGroup>
+```php Laravel icon="laravel"
 use Inertia\Inertia;
 
 class EventsController extends Controller
@@ -34,8 +35,30 @@ class EventsController extends Controller
             ),
         ]);
     }
+
 }
 ```
+
+```csharp .NET icon="dotnet"
+using InertiaCore;
+
+public class EventsController : Controller
+{
+    public IActionResult Show(Event @event)
+    {
+        return Inertia.Render("Event/Show", new {
+            Event = new {
+                @event.Id,
+                @event.Title,
+                @event.StartDate,
+                @event.Description
+            }
+        });
+    }
+}
+```
+
+</CodeGroup>
 
 <Tip>
     To ensure that pages load quickly, only return the minimum data required for the page.
@@ -49,7 +72,8 @@ class EventsController extends Controller
 
 To pass data from the server to your page components, you can use properties. You can pass various types of values as props, including primitive types, arrays, objects, and several Laravel-specific types that are automatically resolved:
 
-```php
+<CodeGroup>
+```php Laravel icon="laravel"
 use App\Models\User;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -77,6 +101,29 @@ Inertia::render('Dashboard', [
 ]);
 ```
 
+```csharp .NET icon="dotnet"
+using InertiaCore;
+
+Inertia.Render("Dashboard", new {
+    // Primitive values
+    Title = "Dashboard",
+    Count = 42,
+    Active = true,
+
+    // Arrays and objects
+    Settings = new { Theme = "dark", Notifications = true },
+
+    // Objects from your DbContext
+    User = currentUser,
+    Users = _context.Users.ToList(),
+
+    // Lazy evaluation using functions
+    Timestamp = new Func<object>(() => DateTimeOffset.UtcNow.ToUnixTimeSeconds())
+});
+```
+
+</CodeGroup>
+
 Arrayable objects like Eloquent models and collections are automatically converted using their `toArray()` method. Responsable objects like API resources and JSON responses are resolved through their `toResponse()` method.
 
 ## `ProvidesInertiaProperty` Interface
@@ -85,7 +132,7 @@ When passing props to your components, you may want to create custom classes tha
 
 This interface requires a `toInertiaProperty` method that receives a `PropertyContext`object containing the property key (`$context->key`), all props for the page (`$context->props`), and the request instance (`$context->request`).
 
-```php
+```php Laravel icon="laravel"
 use Inertia\PropertyContext;
 use Inertia\ProvidesInertiaProperty;
 
@@ -107,7 +154,7 @@ class UserAvatar implements ProvidesInertiaProperty
 
 Once defined, you can use this class directly as a prop value.
 
-```php
+```php Laravel icon="laravel"
 Inertia::render('Profile', [
     'user' => $user,
     'avatar' => new UserAvatar($user, 128),
@@ -116,7 +163,7 @@ Inertia::render('Profile', [
 
 The `PropertyContext` gives you access to the property key, which enables powerful patterns like merging with shared data.
 
-```php
+```php Laravel icon="laravel"
 use Inertia\Inertia;
 use Inertia\PropertyContext;
 use Inertia\ProvidesInertiaProperty;
@@ -153,7 +200,7 @@ In some situations you may want to group related props together for reusability 
 
 This interface requires a `toInertiaProperties` method that returns an array of key-value pairs. The method receives a `RenderContext` object containing the component name (`$context->component`) and request instance (`$context->request`).
 
-```php
+```php Laravel icon="laravel"
 use App\Models\User;
 use Illuminate\Container\Attributes\CurrentUser;
 use Inertia\RenderContext;
@@ -180,7 +227,7 @@ class UserPermissions implements ProvidesInertiaProperties
 
 You can use these prop classes directly in the `render()` and `with()` methods.
 
-```php
+```php Laravel icon="laravel"
 public function index(UserPermissions $permissions)
 {
     return Inertia::render('UserProfile', $permissions);
@@ -193,7 +240,7 @@ public function index(UserPermissions $permissions)
 
 You can also combine multiple prop classes with other props in an array:
 
-```php
+```php Laravel icon="laravel"
 public function index(UserPermissions $permissions)
 {
     return Inertia::render('UserProfile', [
@@ -213,22 +260,44 @@ public function index(UserPermissions $permissions)
 
 There are situations where you may want to access your prop data in your application's root Blade template. For example, you may want to add a meta description tag, Twitter card meta tags, or Facebook Open Graph meta tags. You can access this data via the `$page` variable.
 
-```blade
+<CodeGroup>
+```blade Laravel icon="laravel"
 <meta name="twitter:title" content="{{ $page['props']['event']->title }}">
 ```
 
+```cshtml Razor (.NET) icon="dotnet"
+<meta name="twitter:title" content="@Model.Props["event"].Title">
+```
+
+</CodeGroup>
+
 Sometimes you may even want to provide data to the root template that will not be sent to your JavaScript page component. This can be accomplished by invoking the `withViewData` method.
 
-```php
+<CodeGroup>
+```php Laravel icon="laravel"
 return Inertia::render('Event', ['event' => $event])
     ->withViewData(['meta' => $event->meta]);
 ```
 
+```csharp .NET icon="dotnet"
+return Inertia.Render("Event", new { Event = @event })
+    .WithViewData("meta", @event.Meta);
+```
+
+</CodeGroup>
+
 After invoking the `withViewData` method, you can access the defined data as you would typically access a Blade template variable.
 
-```blade
+<CodeGroup>
+```blade Laravel icon="laravel"
 <meta name="description" content="{{ $meta }}">
 ```
+
+```cshtml Razor (.NET) icon="dotnet"
+<meta name="description" content="@ViewData["meta"]">
+```
+
+</CodeGroup>
 
 ## Maximum Response Size
 

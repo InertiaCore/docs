@@ -2417,7 +2417,8 @@ With Precognition enabled, you may call `submit()` without arguments to submit t
 
 When using Inertia, you don't typically inspect form responses client-side like you would with traditional XHR/fetch requests. Instead, your server-side route or controller issues a [redirect](/v2/the-basics/redirects) response after processing the form, often redirecting to a success page.
 
-```php
+<CodeGroup>
+```php Laravel icon="laravel"
 class UsersController extends Controller
 {
     public function index()
@@ -2439,6 +2440,47 @@ class UsersController extends Controller
     }
 }
 ```
+
+```csharp .NET icon="dotnet"
+using InertiaCore;
+
+public class UsersController : Controller
+{
+    private readonly AppDbContext _context;
+
+    public UsersController(AppDbContext context)
+    {
+        _context = context;
+    }
+
+    public IActionResult Index()
+    {
+        return Inertia.Render("Users/Index", new {
+            Users = _context.Users.ToList(),
+        });
+    }
+
+    [HttpPost]
+    public async Task<IActionResult> Store(CreateUserRequest request)
+    {
+        if (!ModelState.IsValid)
+        {
+            return RedirectToAction("Index");
+        }
+
+        _context.Users.Add(new User {
+            FirstName = request.FirstName,
+            LastName = request.LastName,
+            Email = request.Email,
+        });
+        await _context.SaveChangesAsync();
+
+        return RedirectToAction("Index");
+    }
+}
+```
+
+</CodeGroup>
 
 This redirect-based approach works with all form submission methods: the `<Form>` component, `useForm` helper, and manual router submissions. It makes handling Inertia forms feel very similar to classic server-side form submissions.
 

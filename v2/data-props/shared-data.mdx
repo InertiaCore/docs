@@ -10,7 +10,9 @@ Inertia's server-side adapters all provide a method of making shared data availa
 
 In Laravel applications, this is typically handled by the `HandleInertiaRequests` middleware that is automatically installed when installing the [server-side adapter](/v2/installation/server-side-setup#middleware).
 
-```php
+<CodeGroup>
+
+```php Laravel icon="laravel"
 class HandleInertiaRequests extends Middleware
 {
     public function share(Request $request)
@@ -28,9 +30,29 @@ class HandleInertiaRequests extends Middleware
 }
 ```
 
+```csharp .NET icon="dotnet"
+// In Program.cs or a middleware
+using InertiaCore;
+
+// Synchronously...
+Inertia.Share("appName", app.Configuration["AppName"]);
+
+// Lazily...
+Inertia.Share("auth.user", () => {
+    var user = httpContext.User;
+    return user.Identity?.IsAuthenticated == true
+        ? new { Id = user.FindFirst("sub")?.Value, Name = user.Identity.Name }
+        : null;
+});
+```
+
+</CodeGroup>
+
 Alternatively, you can manually share data using the `Inertia::share` method.
 
-```php
+<CodeGroup>
+
+```php Laravel icon="laravel"
 use Inertia\Inertia;
 
 // Synchronously...
@@ -43,6 +65,23 @@ Inertia::share('user', fn (Request $request) => $request->user()
 );
 ```
 
+```csharp .NET icon="dotnet"
+using InertiaCore;
+
+// Synchronously...
+Inertia.Share("appName", app.Configuration["AppName"]);
+
+// Lazily...
+Inertia.Share("user", () => {
+    var user = httpContext.User;
+    return user.Identity?.IsAuthenticated == true
+        ? new { Id = user.FindFirst("sub")?.Value, Name = user.Identity.Name }
+        : null;
+});
+```
+
+</CodeGroup>
+
 Shared data should be used sparingly as all shared data is included with every response.
 
 Page props and shared data are merged together, so be sure to namespace your shared data appropriately to avoid collisions.
@@ -51,7 +90,9 @@ Page props and shared data are merged together, so be sure to namespace your sha
 
 You may share data that is resolved only once and remembered by the client across subsequent navigations using [once props](/v2/data-props/once-props).
 
-```php
+<CodeGroup>
+
+```php Laravel icon="laravel"
 class HandleInertiaRequests extends Middleware
 {
     public function share(Request $request)
@@ -63,9 +104,20 @@ class HandleInertiaRequests extends Middleware
 }
 ```
 
+```csharp .NET icon="dotnet"
+using InertiaCore;
+
+// Share a once prop using Inertia.Share with Inertia.Once
+Inertia.Share("countries", Inertia.Once(() => _context.Countries.ToList()));
+```
+
+</CodeGroup>
+
 Alternatively, you may define a dedicated `shareOnce()` method in the middleware. The middleware will evaluate both `share()` and `shareOnce()`, merging the results.
 
-```php
+<CodeGroup>
+
+```php Laravel icon="laravel"
 class HandleInertiaRequests extends Middleware
 {
     public function shareOnce(Request $request): array
@@ -77,11 +129,28 @@ class HandleInertiaRequests extends Middleware
 }
 ```
 
+```csharp .NET icon="dotnet"
+using InertiaCore;
+
+// In .NET, use Inertia.Share with Inertia.Once
+Inertia.Share("countries", Inertia.Once(() => _context.Countries.ToList()));
+```
+
+</CodeGroup>
+
 You may also share once props manually using the `Inertia::shareOnce()` method.
 
-```php
+<CodeGroup>
+
+```php Laravel icon="laravel"
 Inertia::shareOnce('countries', fn () => Country::all());
 ```
+
+```csharp .NET icon="dotnet"
+Inertia.Share("countries", Inertia.Once(() => _context.Countries.ToList()));
+```
+
+</CodeGroup>
 
 ## Accessing Shared Data
 
