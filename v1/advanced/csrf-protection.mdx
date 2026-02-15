@@ -80,7 +80,9 @@ Obviously, this isn't a great user experience. A better way to handle these erro
 
 When using Laravel, you may modify your application's exception handler to automatically redirect the user back to the page they were previously on while flashing a message to the session. To accomplish this, you may use the `respond` exception method in your application's `bootstrap/app.php` file.
 
-```php
+<CodeGroup>
+
+```php Laravel icon="laravel"
 use Symfony\Component\HttpFoundation\Response;
 
 ->withExceptions(function (Exceptions $exceptions) {
@@ -95,6 +97,25 @@ use Symfony\Component\HttpFoundation\Response;
     });
 });
 ```
+
+```csharp .NET icon="dotnet"
+// ASP.NET Core handles CSRF via anti-forgery tokens automatically.
+// Add anti-forgery services in Program.cs:
+builder.Services.AddAntiforgery();
+
+// Use in the middleware pipeline:
+app.UseAntiforgery();
+
+// In Razor views, include the anti-forgery token:
+// @Html.AntiForgeryToken()
+
+// Protect controller actions with the [ValidateAntiForgeryToken] attribute:
+// [HttpPost]
+// [ValidateAntiForgeryToken]
+// public IActionResult Store() { ... }
+```
+
+</CodeGroup>
 
 The end result is a much better experience for your users. Instead of seeing the error modal, the user is instead presented with a message that the page "expired" and are asked to try again.
 

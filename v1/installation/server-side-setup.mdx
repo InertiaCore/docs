@@ -16,15 +16,25 @@ Laravel's [starter kits](https://laravel.com/docs/starter-kits), Breeze and Jets
 
 First, install the Inertia server-side adapter using the Composer package manager.
 
-```bash
+<CodeGroup>
+
+```bash Laravel icon="laravel"
 composer require inertiajs/inertia-laravel
 ```
+
+```bash .NET icon="dotnet"
+dotnet add package AspNetCore.InertiaCore
+```
+
+</CodeGroup>
 
 ## Root Template
 
 Next, setup the root template that will be loaded on the first page visit to your application. This will be used to load your site assets (CSS and JavaScript), and will also contain a root `<div>` in which to boot your JavaScript application.
 
-```blade
+<CodeGroup>
+
+```blade Laravel icon="laravel"
 <html>
     <head>
         <meta charset="utf-8" />
@@ -38,6 +48,23 @@ Next, setup the root template that will be loaded on the first page visit to you
 </html>
 ```
 
+```html .NET (Razor) icon="dotnet"
+@using InertiaCore
+<html>
+    <head>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
+        @Vite.Input("src/app.js")
+        @await Inertia.Head(Model)
+    </head>
+    <body>
+        @await Inertia.Html(Model)
+    </body>
+</html>
+```
+
+</CodeGroup>
+
 This template should include your assets, as well as the `@inertia` and `@inertiaHead`directives.
 
 By default, Inertia's Laravel adapter will assume your root template is named `app.blade.php`. If you would like to use a different root view, you can change it using the `Inertia::setRootView()` method.
@@ -46,13 +73,27 @@ By default, Inertia's Laravel adapter will assume your root template is named `a
 
 Next we need to setup the Inertia middleware. You can accomplish this by publishing the `HandleInertiaRequests` middleware to your application, which can be done using the following Artisan command.
 
-```sh
+<CodeGroup>
+
+```sh Laravel icon="laravel"
 php artisan inertia:middleware
 ```
 
+```csharp .NET icon="dotnet"
+// No artisan command needed. In Program.cs, add:
+builder.Services.AddInertia();
+
+// Then in the middleware pipeline:
+app.UseInertia();
+```
+
+</CodeGroup>
+
 Once the middleware has been published, append the `HandleInertiaRequests` middleware to the `web` middleware group in your application's `bootstrap/app.php` file.
 
-```php
+<CodeGroup>
+
+```php Laravel icon="laravel"
 use App\Http\Middleware\HandleInertiaRequests;
 
 ->withMiddleware(function (Middleware $middleware) {
@@ -62,13 +103,31 @@ use App\Http\Middleware\HandleInertiaRequests;
 })
 ```
 
+```csharp .NET icon="dotnet"
+using InertiaCore.Extensions;
+
+// In Program.cs
+var builder = WebApplication.CreateBuilder(args);
+
+builder.Services.AddInertia();
+builder.Services.AddViteHelper();
+
+var app = builder.Build();
+
+app.UseInertia();
+```
+
+</CodeGroup>
+
 This middleware provides a `version()` method for setting your [asset version](/v1/advanced/asset-versioning), as well as a `share()` method for defining [shared data](/v1/the-basics/shared-data).
 
 ## Creating Responses
 
 That's it, you're all ready to go server-side! Now you're ready to start creating Inertia [pages](/v1/the-basics/pages) and rendering them via [responses](/v1/the-basics/responses).
 
-```php
+<CodeGroup>
+
+```php Laravel icon="laravel"
 use Inertia\Inertia;
 
 class EventsController extends Controller
@@ -86,3 +145,26 @@ class EventsController extends Controller
     }
 }
 ```
+
+```csharp .NET icon="dotnet"
+using InertiaCore;
+
+public class EventsController : Controller
+{
+    public IActionResult Show(int id)
+    {
+        var evt = _context.Events.Find(id);
+
+        return Inertia.Render("Event/Show", new {
+            Event = new {
+                evt.Id,
+                evt.Title,
+                evt.StartDate,
+                evt.Description,
+            },
+        });
+    }
+}
+```
+
+</CodeGroup>

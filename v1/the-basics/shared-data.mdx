@@ -12,7 +12,9 @@ Inertia's server-side adapters all provide a method of making shared data availa
 
 In Laravel applications, this is typically handled by the `HandleInertiaRequests` middleware that is automatically installed when installing the [server-side adapter](/server-side-setup#middleware).
 
-```php
+<CodeGroup>
+
+```php Laravel icon="laravel"
 class HandleInertiaRequests extends Middleware
 {
     public function share(Request $request)
@@ -30,9 +32,27 @@ class HandleInertiaRequests extends Middleware
 }
 ```
 
+```csharp .NET icon="dotnet"
+using InertiaCore;
+
+// In Program.cs or a shared data service
+Inertia.Share("appName", builder.Configuration["AppName"]);
+
+// Or share data in a controller or middleware
+Inertia.Share("auth", new {
+    User = new {
+        httpContext.User.Identity?.Name,
+    },
+});
+```
+
+</CodeGroup>
+
 Alternatively, you can manually share data using the `Inertia::share` method.
 
-```php
+<CodeGroup>
+
+```php Laravel icon="laravel"
 use Inertia\Inertia;
 
 // Synchronously...
@@ -44,6 +64,21 @@ Inertia::share('user', fn (Request $request) => $request->user()
     : null
 );
 ```
+
+```csharp .NET icon="dotnet"
+using InertiaCore;
+
+// Synchronously...
+Inertia.Share("appName", "My App");
+
+// Using a dictionary...
+Inertia.Share(new Dictionary<string, object?> {
+    ["appName"] = "My App",
+    ["user"] = currentUser,
+});
+```
+
+</CodeGroup>
 
 Shared data should be used sparingly as all shared data is included with every response.
 
@@ -142,7 +177,9 @@ Another great use-case for shared data is flash messages. These are messages sto
 
 Here's a simple way to implement flash messages in your Inertia applications. First, share the flash message on each request.
 
-```php
+<CodeGroup>
+
+```php Laravel icon="laravel"
 class HandleInertiaRequests extends Middleware
 {
     public function share(Request $request)
@@ -155,6 +192,17 @@ class HandleInertiaRequests extends Middleware
     }
 }
 ```
+
+```csharp .NET icon="dotnet"
+using InertiaCore;
+
+// Share flash messages using TempData in a controller or middleware
+Inertia.Share("flash", new {
+    Message = TempData["message"]?.ToString(),
+});
+```
+
+</CodeGroup>
 
 Next, display the flash message in a frontend component, such as the site layout.
 

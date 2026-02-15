@@ -12,9 +12,23 @@ When using Inertia, all of your application's routes are defined server-side. Th
 
 If you have a [page](/v1/the-basics/pages) that doesn't need a corresponding controller method, like an "FAQ" or "about" page, you can route directly to a component via the `Route::inertia()` method.
 
-```php
+<CodeGroup>
+
+```php Laravel icon="laravel"
 Route::inertia('/about', 'About');
 ```
+
+```csharp .NET icon="dotnet"
+using InertiaCore;
+
+// In your controller
+public IActionResult About()
+{
+    return Inertia.Render("About");
+}
+```
+
+</CodeGroup>
 
 ## Generating URLs
 
@@ -22,7 +36,9 @@ Some server-side frameworks allow you to generate URLs from named routes. Howeve
 
 The first option is to generate URLs server-side and include them as props. Notice in this example how we're passing the `edit_url` and `create_url` to the `Users/Index` component.
 
-```php
+<CodeGroup>
+
+```php Laravel icon="laravel"
 class UsersController extends Controller
 {
     public function index()
@@ -41,6 +57,30 @@ class UsersController extends Controller
     }
 }
 ```
+
+```csharp .NET icon="dotnet"
+using InertiaCore;
+
+public class UsersController : Controller
+{
+    public IActionResult Index()
+    {
+        var users = _context.Users.Select(user => new {
+            Id = user.Id,
+            Name = user.Name,
+            Email = user.Email,
+            EditUrl = Url.Action("Edit", new { id = user.Id }),
+        }).ToList();
+
+        return Inertia.Render("Users/Index", new {
+            Users = users,
+            CreateUrl = Url.Action("Create"),
+        });
+    }
+}
+```
+
+</CodeGroup>
 
 However, when using Laravel, the [Ziggy](https://github.com/tightenco/ziggy) library can make your named, server-side routes available to you via a global `route()` function. In fact, if you are developing an application using one of Laravel's [starter kits](https://laravel.com/docs/starter-kits), Ziggy is already configured for you.
 

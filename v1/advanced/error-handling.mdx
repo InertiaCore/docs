@@ -18,7 +18,9 @@ In production you will want to return a proper Inertia error response instead of
 
 When building Laravel applications, you can accomplish this by using the `respond` exception method in your application's `bootstrap/app.php` file.
 
-```php
+<CodeGroup>
+
+```php Laravel icon="laravel"
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Inertia\Inertia;
@@ -39,6 +41,30 @@ use Inertia\Inertia;
     });
 })
 ```
+
+```csharp .NET icon="dotnet"
+using InertiaCore;
+
+// In Program.cs, add custom exception handling middleware
+app.UseStatusCodePagesWithReExecute("/Error/{0}");
+
+// In a dedicated ErrorController
+public class ErrorController : Controller
+{
+    [Route("Error/{statusCode}")]
+    public IActionResult HttpStatusCodeHandler(int statusCode)
+    {
+        if (new[] { 500, 503, 404, 403 }.Contains(statusCode))
+        {
+            return Inertia.Render("Error", new { Status = statusCode });
+        }
+
+        return StatusCode(statusCode);
+    }
+}
+```
+
+</CodeGroup>
 
 You may have noticed we're returning an `Error` page component in the example above. You'll need to actually create this component, which will serve as the generic error page for your application. Here's an example error component you can use as a starting point.
 

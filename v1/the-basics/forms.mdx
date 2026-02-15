@@ -148,7 +148,9 @@ As you may have noticed in the example above, when using Inertia, you don't typi
 
 Instead, your server-side route / controller typically issues a [redirect](/v1/the-basics/redirects) response. And, Of course, there is nothing stopping you from redirecting the user right back to the page they were previously on. Using this approach, handling Inertia form submissions feels very similar to handling classic HTML form submissions.
 
-```php
+<CodeGroup>
+
+```php Laravel icon="laravel"
 class UsersController extends Controller
 {
         public function index()
@@ -170,6 +172,38 @@ class UsersController extends Controller
         }
 }
 ```
+
+```csharp .NET icon="dotnet"
+using InertiaCore;
+
+public class UsersController : Controller
+{
+    public IActionResult Index()
+    {
+        return Inertia.Render("Users/Index", new {
+            Users = _context.Users.ToList(),
+        });
+    }
+
+    [HttpPost]
+    public IActionResult Store([FromForm] UserModel model)
+    {
+        if (!ModelState.IsValid)
+            return Inertia.Back();
+
+        _context.Users.Add(new User {
+            FirstName = model.FirstName,
+            LastName = model.LastName,
+            Email = model.Email,
+        });
+        _context.SaveChanges();
+
+        return RedirectToAction("Index");
+    }
+}
+```
+
+</CodeGroup>
 
 ## Server-side Validation
 

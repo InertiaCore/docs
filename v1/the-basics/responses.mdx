@@ -10,7 +10,9 @@ Creating an Inertia response is simple. To get started, invoke the `Inertia::ren
 
 In the example below, we will pass a single prop (`event`) which contains four attributes (`id`, `title`, `start_date` and `description`) to the `Event/Show` page component.
 
-```php
+<CodeGroup>
+
+```php Laravel icon="laravel"
 use Inertia\Inertia;
 
 class EventsController extends Controller
@@ -39,15 +41,63 @@ class EventsController extends Controller
 }
 ```
 
-```html
+```csharp .NET icon="dotnet"
+using InertiaCore;
+
+public class EventsController : Controller
+{
+    public IActionResult Show(int id)
+    {
+        var evt = _context.Events.Find(id);
+
+        return Inertia.Render("Event/Show", new {
+            Event = new {
+                evt.Id,
+                evt.Title,
+                evt.StartDate,
+                evt.Description,
+            },
+        });
+    }
+}
+```
+
+</CodeGroup>
+
+<CodeGroup>
+
+```html Laravel icon="laravel"
 <meta name="twitter:title" content="{{ $page['props']['event']->title }}">
 ```
 
-```php
+```html .NET icon="dotnet"
+<meta name="twitter:title" content="@Model.Props["event"].Title">
+```
+
+</CodeGroup>
+
+<CodeGroup>
+
+```php Laravel icon="laravel"
 return Inertia::render('Event', ['event' => $event])
     ->withViewData(['meta' => $event->meta]);
 ```
 
-```html
+```csharp .NET icon="dotnet"
+return Inertia.Render("Event", new { Event = evt })
+    .WithViewData("meta", evt.Meta);
+```
+
+</CodeGroup>
+
+<CodeGroup>
+
+```html Laravel icon="laravel"
 <meta name="description" content="{{ $meta }}">
 ```
+
+```html .NET icon="dotnet"
+<meta name="description" content="@ViewData["meta"]">
+```
+
+</CodeGroup>

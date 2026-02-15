@@ -12,7 +12,9 @@ To enable automatic asset refreshing, you need to tell Inertia the current versi
 
 Typically, your application's asset version can be specified within the `version` method of the Inertia `HandleInertiaRequests` middleware.
 
-```php
+<CodeGroup>
+
+```php Laravel icon="laravel"
 class HandleInertiaRequests extends Middleware
 {
     public function version(Request $request)
@@ -22,14 +24,39 @@ class HandleInertiaRequests extends Middleware
 }
 ```
 
+```csharp .NET icon="dotnet"
+using InertiaCore;
+
+// Asset versioning is handled automatically when using
+// AddViteHelper() — it reads the Vite manifest hash.
+// You can also set a version manually:
+Inertia.Version("v2.0.0");
+
+// Or use a callback for lazy evaluation:
+Inertia.Version(() => ComputeVersionHash());
+```
+
+</CodeGroup>
+
 Alternatively, the asset version can be provided manually using the `Inertia::version()` method.
 
-```php
+<CodeGroup>
+
+```php Laravel icon="laravel"
 use Inertia\Inertia;
 
 Inertia::version($version);
 Inertia::version(fn () => $version); // Lazily...
 ```
+
+```csharp .NET icon="dotnet"
+using InertiaCore;
+
+Inertia.Version(version);
+Inertia.Version(() => version); // Lazily...
+```
+
+</CodeGroup>
 
 ## Cache Busting
 

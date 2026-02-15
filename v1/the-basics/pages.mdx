@@ -97,7 +97,9 @@ export default function Welcome({ user }) {
 Given the page above, you can render the page by returning an [Inertia response](/v1/the-basics/responses) from a controller or route. In this example, let's assume this page is stored at <VueSpecific>`resources/js/Pages/User/Show.vue`</VueSpecific><ReactSpecific>`resources/js/Pages/User/Show.jsx`</ReactSpecific><SvelteSpecific>`resources/js/Pages/User/Show.svelte`</SvelteSpecific>within a Laravel application.
 </ClientSpecific>
 
-```php
+<CodeGroup>
+
+```php Laravel icon="laravel"
 use Inertia\Inertia;
 
 class UserController extends Controller
@@ -110,6 +112,24 @@ class UserController extends Controller
     }
 }
 ```
+
+```csharp .NET icon="dotnet"
+using InertiaCore;
+
+public class UserController : Controller
+{
+    public IActionResult Show(int id)
+    {
+        var user = _context.Users.Find(id);
+
+        return Inertia.Render("User/Show", new {
+            User = user,
+        });
+    }
+}
+```
+
+</CodeGroup>
 
 ## Creating Layouts
 
