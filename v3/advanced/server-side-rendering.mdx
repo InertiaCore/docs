@@ -441,7 +441,11 @@ createInertiaApp({
 
 ## Error Handling
 
-When SSR rendering fails, Inertia gracefully falls back to client-side rendering and dispatches an `SsrRenderFailed` event. You may listen for this event to log failures or send them to an error tracking service.
+When SSR rendering fails, Inertia gracefully falls back to client-side rendering. The Vite plugin logs detailed error information to the console, including the component name, request URL, source location, and a tailored hint to help you resolve the issue.
+
+Common SSR errors are automatically classified. Browser API errors (such as referencing `window` or `document` in server-rendered code) include guidance on moving the code to a lifecycle hook. Component resolution errors suggest checking file paths and casing.
+
+Inertia also dispatches an `SsrRenderFailed` event on the server. You may listen for this event to log failures or send them to an error tracking service.
 
 ```php
 use Illuminate\Support\Facades\Log;
