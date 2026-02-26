@@ -486,24 +486,24 @@ The `error` event fires when validation errors are present on "successful" page 
 ```js Vue icon="vuejs"
 import { router } from '@inertiajs/vue3'
 
-router.on('error', (errors) => {
-    console.log(errors)
+router.on('error', (event) => {
+    console.log(event.detail.errors)
 })
 ```
 
 ```jsx React icon="react"
 import { router } from '@inertiajs/react'
 
-router.on('error', (errors) => {
-    console.log(errors)
+router.on('error', (event) => {
+    console.log(event.detail.errors)
 })
 ```
 
 ```js Svelte icon="s"
 import { router } from '@inertiajs/svelte'
 
-router.on('error', (errors) => {
-    console.log(errors)
+router.on('error', (event) => {
+    console.log(event.detail.errors)
 })
 ```
 
