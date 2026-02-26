@@ -107,7 +107,7 @@ import { Link } from "@inertiajs/react";
 ```
 
 ```svelte Svelte icon="s"
-import { inerta } from '@inertiajs/svelte'
+import { inertia } from '@inertiajs/svelte'
 
 <a href="/users" use:inertia={{ prefetch: 'mount' }}>Users</a>
 ```
@@ -417,13 +417,9 @@ function submit() {
 You can also invalidate cache tags with programmatic visits by including `invalidateCacheTags` in the options.
 
 ```js
-router.delete(
-  `/users/${userId}`,
-  {},
-  {
-    invalidateCacheTags: ["users", "dashboard"],
-  },
-);
+router.delete(`/users/${userId}`, {
+  invalidateCacheTags: ["users", "dashboard"],
+});
 
 router.post("/posts", postData, {
   invalidateCacheTags: ["posts", "recent-posts"],
