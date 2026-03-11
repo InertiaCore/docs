@@ -400,8 +400,8 @@ const layout = useLayoutProps({
 let { children } = $props()
 </script>
 
-<header>{$layout.title}</header>
-{#if $layout.showSidebar}
+<header>{layout.title}</header>
+{#if layout.showSidebar}
     <aside>Sidebar</aside>
 {/if}
 <main>
@@ -421,7 +421,7 @@ In Vue, `useLayoutProps` returns a `ComputedRef`, so access its properties direc
 
 <SvelteSpecific>
 
-In Svelte, `useLayoutProps` returns a readable store. Use the `$` prefix to access its values (e.g., `$layout.title`).
+In Svelte, `useLayoutProps` returns a reactive object. Access its properties directly (e.g., `layout.title`). The values update reactively when pages set new layout props.
 
 </SvelteSpecific>
 

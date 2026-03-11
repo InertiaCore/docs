@@ -46,7 +46,7 @@ router.post("/users", {
 import { page, router } from "@inertiajs/svelte";
 
 router.post("/users", {
-  _token: $page.props.csrf_token,
+  _token: page.props.csrf_token,
   name: "John Doe",
   email: "john.doe@example.com",
 });

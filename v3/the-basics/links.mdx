@@ -401,16 +401,16 @@ const { url, component } = usePage()
 import { inertia, Link, page } from '@inertiajs/svelte'
 
 // URL exact match...
-<a href="/users" use:inertia class:active={$page.url === '/users'}>Users</a>
+<a href="/users" use:inertia class:active={page.url === '/users'}>Users</a>
 
 // Component exact match...
-<a href="/users" use:inertia class:active={$page.component === 'Users/Index'}>Users</a>
+<a href="/users" use:inertia class:active={page.component === 'Users/Index'}>Users</a>
 
 // URL starts with (/users, /users/create, /users/1, etc.)...
-<Link href="/users" class={$page.url.startsWith('/users') ? 'active' : ''}>Users</Link>
+<Link href="/users" class={page.url.startsWith('/users') ? 'active' : ''}>Users</Link>
 
 // Component starts with (Users/Index, Users/Create, Users/Show, etc.)...
-<Link href="/users" class={$page.component.startsWith('Users') ? 'active' : ''}>Users</Link>
+<Link href="/users" class={page.component.startsWith('Users') ? 'active' : ''}>Users</Link>
 ```
 
 </CodeGroup>

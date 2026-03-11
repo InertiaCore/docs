@@ -90,8 +90,8 @@ export default function Layout({ children }) {
     import { page } from '@inertiajs/svelte'
 </script>
 
-{#if $page.flash.toast}
-    <div class="toast">{$page.flash.toast.message}</div>
+{#if page.flash.toast}
+    <div class="toast">{page.flash.toast.message}</div>
 {/if}
 ```
 

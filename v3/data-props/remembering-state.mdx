@@ -139,10 +139,10 @@ import { page, useRemember } from "@inertiajs/svelte";
 
 const form = useRemember(
   {
-    first_name: $page.props.user.first_name,
-    last_name: $page.props.user.last_name,
+    first_name: page.props.user.first_name,
+    last_name: page.props.user.last_name,
   },
-  `Users/Edit:${$page.props.user.id}`,
+  `Users/Edit:${page.props.user.id}`,
 );
 ```
 
