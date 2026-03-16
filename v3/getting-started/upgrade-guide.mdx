@@ -89,6 +89,17 @@ You should also clear your cached views since the `@inertia` Blade directive out
 php artisan view:clear
 ```
 
+Also, if are using the `inertia` data attribute in your blade files `<head>` section, you should change it to `data-inertia`:
+
+```html
+<!-- Before (v2) -->
+<title inertia>My Website</title>
+
+<!-- After (v3) -->
+<title data-inertia>My Website</title>
+```
+
+
 ## Breaking Changes
 
 ---
