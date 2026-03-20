@@ -87,14 +87,6 @@ By default, validation error values are typed as `string`. You may configure Typ
 errorValueType: string[]
 ```
 
-<Note>
-  The next version of [Laravel
-  Wayfinder](https://github.com/laravel/wayfinder/tree/next) may automatically
-  generate these types for you by analyzing your Laravel application. It
-  generates TypeScript types for shared props, page props, form requests, and
-  Eloquent models. This version is currently in beta.
-</Note>
-
 ### Layout Props
 
 The `layoutProps` option types the data accepted by `setLayoutProps()`. The `namedLayoutProps` option types the data accepted by `setLayoutPropsFor()`, keyed by layout name.
@@ -111,6 +103,14 @@ namedLayoutProps: {
 ```
 
 With this configuration, `setLayoutProps({ title: 'Dashboard' })` is type-checked, and `setLayoutPropsFor('app', { theme: 'dark' })` validates both the layout name and its props.
+
+<Note>
+  The next version of [Laravel
+  Wayfinder](https://github.com/laravel/wayfinder/tree/next) may automatically
+  generate these types for you by analyzing your Laravel application. It
+  generates TypeScript types for shared props, page props, form requests, and
+  Eloquent models. This version is currently in beta.
+</Note>
 
 ## Page Components
 
@@ -404,7 +404,7 @@ const http = useHttp<UserForm, UserResponse>({ name: "", email: "" });
 
 ### Per-Request Response Types
 
-Each HTTP method accepts its own generic type parameter, allowing you to override the response type on a per-call basis. This is useful when different endpoints return different response shapes.
+Each HTTP method accepts its own generic type parameter, allowing you to override the response type on a per-request basis. This is useful when different endpoints return different response shapes.
 
 ```ts
 interface OrderResponse {
