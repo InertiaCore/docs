@@ -402,29 +402,6 @@ interface UserResponse {
 const http = useHttp<UserForm, UserResponse>({ name: "", email: "" });
 ```
 
-### Per-Request Response Types
-
-Each HTTP method accepts its own generic type parameter, allowing you to override the response type on a per-request basis. This is useful when different endpoints return different response shapes.
-
-```ts
-interface OrderResponse {
-  orderId: string;
-  total: number;
-}
-
-// Override the response type per request...
-const user: UserResponse = await http.post<UserResponse>("/api/users");
-const order: OrderResponse = await http.get<OrderResponse>("/api/orders/123");
-const submitted: UserResponse = await http.submit<UserResponse>("post", "/api/users");
-
-// The onSuccess callback is also typed...
-await http.post<UserResponse>("/api/users", {
-  onSuccess: (response) => {
-    console.log(response.id, response.name);
-  },
-});
-```
-
 ## Layout Callbacks
 
 The `LayoutCallback` type provides type safety for [layout callbacks](/v3/the-basics/layouts#callback-props). The callback receives the page's props (typed via your global `sharedPageProps` configuration) and should return a valid layout definition.
