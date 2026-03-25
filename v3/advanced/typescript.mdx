@@ -85,7 +85,7 @@ errorValueType: string[]
 
 ### Layout Props
 
-The `layoutProps` option types the data accepted by `setLayoutProps()`. The `namedLayoutProps` option types the data accepted by `setLayoutPropsFor()`, keyed by layout name.
+The `layoutProps` option types the data accepted by `setLayoutProps()`. The `namedLayoutProps` option types the data accepted by `setLayoutProps('name', props)`, keyed by layout name.
 
 ```ts
 layoutProps: {
@@ -98,7 +98,14 @@ namedLayoutProps: {
 }
 ```
 
-With this configuration, `setLayoutProps({ title: 'Dashboard' })` is type-checked, and `setLayoutPropsFor('app', { theme: 'dark' })` validates both the layout name and its props.
+With this configuration, `setLayoutProps({ title: 'Dashboard' })` is type-checked, and `setLayoutProps('app', { theme: 'dark' })` validates both the layout name and its props.
+
+You may also pass a generic type parameter directly to `setLayoutProps` for ad-hoc typing without configuring the global `InertiaConfig` interface.
+
+```ts
+setLayoutProps<{ custom: string }>({ custom: 'value' })
+setLayoutProps<{ collapsed: boolean }>('sidebar', { collapsed: true })
+```
 
 <Note>
   The next version of [Laravel
