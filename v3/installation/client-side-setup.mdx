@@ -336,7 +336,7 @@ createInertiaApp({
 
 If you prefer not to use the Vite plugin, you may provide the `resolve` and `setup` callbacks manually. The `resolve` callback tells Inertia how to load a page component and receives the component name and the full [page object](/v3/core-concepts/the-protocol). The `setup` callback initializes the client-side framework.
 
-<Note>If you're using [server-side rendering](/v3/advanced/server-side-rendering), a manual `setup` callback prevents the Vite plugin from auto-generating SSR handling. You should create a [separate SSR entry point](/v3/advanced/server-side-rendering#ssr-entry-point) and update your app to use [client-side hydration](/v3/advanced/server-side-rendering#client-side-hydration).</Note>
+<Note>A manual `setup` callback prevents the Vite plugin from auto-generating [SSR](/v3/advanced/server-side-rendering) handling. You should create a [separate SSR entry point](/v3/advanced/server-side-rendering#ssr-entry-point) and update your app to use [client-side hydration](/v3/advanced/server-side-rendering#client-side-hydration).</Note>
 
 <CodeGroup>
 
