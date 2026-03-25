@@ -171,15 +171,17 @@ router.post('/users', data, {
 
 ### `router.cancel()` Replaced
 
-The `router.cancel()` method has been replaced by `router.cancelAll()`, which provides granular control over which request types to cancel:
+The `router.cancel()` method has been replaced by `router.cancelAll()`. In v2, `cancel()` only cancelled synchronous requests. The new `cancelAll()` method cancels all synchronous, asynchronous, and prefetch requests by default. You may pass options to limit which request types are cancelled.
 
 ```js
-// Before (v2)
+// Before (v2) — only cancelled sync requests
 router.cancel()
 
-// After (v3)
+// After (v3) — cancels all request types
 router.cancelAll()
-router.cancelAll({ async: false, prefetch: false }) // Cancel only sync requests
+
+// To match v2 behavior (sync only)...
+router.cancelAll({ async: false, prefetch: false })
 ```
 
 See the [visit cancellation](/v3/the-basics/manual-visits#visit-cancellation) documentation for more details.
