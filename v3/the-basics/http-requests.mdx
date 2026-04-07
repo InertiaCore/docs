@@ -448,7 +448,7 @@ http.post('/api/users', {
     onBefore: () => { ... },
     onStart: () => { ... },
     onProgress: (progress) => { ... },
-    onSuccess: (response, httpResponse) => { ... },
+    onSuccess: (data, response) => { ... },
     onError: (errors) => { ... },
     onHttpException: (response) => { ... },
     onNetworkError: (error) => { ... },
@@ -465,8 +465,8 @@ The `onSuccess` callback receives the parsed response data as its first argument
 
 ```js
 http.post('/api/users', {
-    onSuccess: (data, httpResponse) => {
-        console.log(httpResponse.status) // 200, 201, etc.
+    onSuccess: (data, response) => {
+        console.log(response.status) // 200, 201, etc.
     },
 })
 ```
