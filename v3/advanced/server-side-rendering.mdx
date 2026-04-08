@@ -61,7 +61,7 @@ The recommended way to configure SSR is with the [`@inertiajs/vite` plugin](/v3/
         })
         ```
 
-        You may pass `false` to opt out of the plugin's automatic SSR handling, for example if you prefer to [configure SSR manually](#manual-setup) but still want to use the other features of the Vite plugin.
+        You may pass `false` to opt out of the plugin's automatic SSR handling, for example if you prefer to [configure SSR manually](#manual-setup) or [disable SSR entirely](#disabling-ssr).
 
         ```js vite.config.js
         inertia({
@@ -353,10 +353,26 @@ Once you have built both your client-side and server-side bundles, you may start
 php artisan inertia:start-ssr
 ```
 
-You may use the `--runtime` option to specify which runtime you want to use. This allows you to switch from the default Node.js runtime to Bun.
+By default, the SSR server uses `node` as its runtime. You may change this by setting the `runtime` option in your `config/inertia.php` file. An absolute path to the runtime binary is also supported.
+
+```php
+'ssr' => [
+    'runtime' => env('INERTIA_SSR_RUNTIME', 'node'),
+],
+```
+
+The `--runtime` flag on the Artisan command overrides the configured value for a single invocation.
 
 ```bash
 php artisan inertia:start-ssr --runtime=bun
+```
+
+You may also enable the `ensure_runtime_exists` option to verify the runtime binary exists before attempting to start the SSR server. The command will exit with an error if the binary cannot be found.
+
+```php
+'ssr' => [
+    'ensure_runtime_exists' => (bool) env('INERTIA_SSR_ENSURE_RUNTIME_EXISTS', false),
+],
 ```
 
 With the server running, you should be able to access your app within the browser with server-side rendering enabled. In fact, you should be able to disable JavaScript entirely and still navigate around your application.
@@ -398,11 +414,43 @@ You may set the environment variable in your `phpunit.xml` to enable this only d
 <env name="INERTIA_SSR_THROW_ON_ERROR" value="true"/>
 ```
 
-## Excluding Pages From SSR
+## Disabling SSR
 
-Sometimes you may wish to disable server-side rendering for certain pages or routes in your application.
+SSR has two layers: the **Vite plugin** serves SSR during development and builds the SSR bundle for production, while the **Laravel adapter** dispatches rendering requests to the SSR server. To fully disable SSR, you should disable both.
 
-### Per-Route via Middleware
+```js vite.config.js
+inertia({
+    ssr: false,
+})
+```
+
+```php config/inertia.php
+'ssr' => [
+    'enabled' => false,
+],
+```
+
+You may also prevent the Laravel adapter from dispatching SSR requests programmatically using the `Inertia::disableSsr()` method. This is useful when you want to keep SSR in your build but [disable it during tests](/v3/advanced/testing#disabling-ssr-during-tests) or in specific environments.
+
+```php
+use Inertia\Inertia;
+
+Inertia::disableSsr();
+```
+
+A boolean or closure may be provided to disable SSR conditionally.
+
+```php
+Inertia::disableSsr(app()->runningUnitTests());
+
+Inertia::disableSsr(fn () => app()->runningUnitTests());
+```
+
+## Excluding Routes from SSR
+
+Sometimes you may wish to skip server-side rendering for certain routes while keeping SSR enabled for the rest of your application.
+
+### Via Middleware
 
 You may use the `$withoutSsr` property on your Inertia middleware to disable SSR for specific route patterns.
 
@@ -425,7 +473,7 @@ class HandleInertiaRequests extends Middleware
 
 ### Via Facade
 
-You may also disable SSR for specific routes using the `Inertia::withoutSsr()` method, typically called from a service provider.
+You may also exclude specific routes using the `Inertia::withoutSsr()` method, typically called from a service provider.
 
 ```php
 use Inertia\Inertia;

@@ -94,6 +94,18 @@ class UserController extends Controller
 
 If you attempt to render a page that does not exist, the response will typically be a blank screen. To prevent this, you may set the `inertia.ensure_pages_exist` configuration option to `true`. The Laravel adapter will then throw an `Inertia\ComponentNotFoundException` when a page cannot be found.
 
+## Transforming Component Names
+
+Sometimes you may wish to transform component names. This may be done on the client side using the [`pages.transform`](/v3/installation/client-side-setup#pages-shorthand) option, or on the server using the `Inertia::transformComponentUsing()` method. The transformed name is sent to the browser and used for `ensure_pages_exist` checks.
+
+```php
+use Inertia\Inertia;
+
+Inertia::transformComponentUsing(function (string $name): string {
+    return "{$name}/Page";
+});
+```
+
 ## Layouts
 
 Most applications share common UI elements across pages. Inertia provides persistent layouts that survive page navigations, along with layout props for passing dynamic data between pages and their layouts. Visit the [layouts documentation](/v3/the-basics/layouts) to learn more.
