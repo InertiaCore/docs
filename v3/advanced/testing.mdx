@@ -290,5 +290,5 @@ A boolean or closure may be passed to disable SSR conditionally. This is typical
 Inertia::disableSsr(app()->runningUnitTests());
 
 // Evaluated lazily...
-    Inertia::disableSsr(fn () => app()->runningUnitTests());
+Inertia::disableSsr(fn () => app()->runningUnitTests());
 ```

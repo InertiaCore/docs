@@ -430,7 +430,7 @@ inertia({
 ],
 ```
 
-You may also prevent the Laravel adapter from dispatching SSR requests programmatically using the `Inertia::disableSsr()` method. This is useful for [disabling SSR during tests](/v3/advanced/testing#disabling-ssr-during-tests) while the Vite dev server is active, as SSR requests would otherwise be dispatched to the dev server's endpoint.
+You may also prevent the Laravel adapter from dispatching SSR requests programmatically using the `Inertia::disableSsr()` method. This is useful when you want to keep SSR in your build but [disable it during tests](/v3/advanced/testing#disabling-ssr-during-tests) or in specific environments.
 
 ```php
 use Inertia\Inertia;
