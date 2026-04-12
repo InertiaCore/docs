@@ -355,11 +355,27 @@ php artisan inertia:start-ssr
 
 By default, the SSR server uses `node` as its runtime. You may change this by setting the `runtime` option in your `config/inertia.php` file. An absolute path to the runtime binary is also supported.
 
-```php
+<CodeGroup>
+
+```php Laravel icon="laravel"
 'ssr' => [
     'runtime' => env('INERTIA_SSR_RUNTIME', 'node'),
 ],
 ```
+
+```csharp .NET icon="dotnet"
+// InertiaCore does not start the SSR server for you — you run the
+// Node-based bundle yourself (e.g. `node ssr.js` or `bun ssr.js`).
+// Point InertiaCore at it via the SsrUrl option in Program.cs.
+builder.Services.AddInertia(options =>
+{
+    options.SsrEnabled = true;
+    options.SsrUrl = builder.Configuration["Inertia:SsrUrl"]
+                     ?? "http://127.0.0.1:13714/render";
+});
+```
+
+</CodeGroup>
 
 The `--runtime` flag on the Artisan command overrides the configured value for a single invocation.
 
@@ -369,11 +385,29 @@ php artisan inertia:start-ssr --runtime=bun
 
 You may also enable the `ensure_runtime_exists` option to verify the runtime binary exists before attempting to start the SSR server. The command will exit with an error if the binary cannot be found.
 
-```php
+<CodeGroup>
+
+```php Laravel icon="laravel"
 'ssr' => [
     'ensure_runtime_exists' => (bool) env('INERTIA_SSR_ENSURE_RUNTIME_EXISTS', false),
 ],
 ```
+
+```csharp .NET icon="dotnet"
+// InertiaCore has no equivalent option — because you start the Node
+// SSR server yourself, verify the runtime binary exists in your own
+// startup or deploy script before launching it. For an absolute path,
+// File.Exists is enough; for a bare command name, resolve it via PATH.
+var runtime = builder.Configuration["Inertia:SsrRuntime"] ?? "node";
+
+if (Path.IsPathRooted(runtime) && !File.Exists(runtime))
+{
+    throw new InvalidOperationException(
+        $"SSR runtime '{runtime}' was not found.");
+}
+```
+
+</CodeGroup>
 
 With the server running, you should be able to access your app within the browser with server-side rendering enabled. In fact, you should be able to disable JavaScript entirely and still navigate around your application.
 
@@ -385,7 +419,9 @@ Common SSR errors are automatically classified. Browser API errors (such as refe
 
 Inertia also dispatches an `SsrRenderFailed` event on the server. You may listen for this event to log failures or send them to an error tracking service.
 
-```php
+<CodeGroup>
+
+```php Laravel icon="laravel"
 use Illuminate\Support\Facades\Log;
 use Inertia\Ssr\SsrRenderFailed;
 
@@ -394,17 +430,47 @@ Event::listen(SsrRenderFailed::class, function (SsrRenderFailed $event) {
 });
 ```
 
+```csharp .NET icon="dotnet"
+// InertiaCore does not dispatch a dedicated SSR-failure event. If you
+// want to detect failed renders, enable SsrThrowOnError so the gateway
+// raises an exception instead of silently falling back, then catch it
+// in your global ASP.NET Core exception handler and log it there.
+builder.Services.AddInertia(options =>
+{
+    options.SsrEnabled = true;
+    options.SsrUrl = "http://127.0.0.1:13714/render";
+    options.SsrThrowOnError = true;
+});
+```
+
+</CodeGroup>
+
 ### Throwing on Error
 
 Since Inertia gracefully falls back to client-side rendering, SSR failures may go unnoticed. Your tests pass because the client-side render succeeds, but your users never receive server-rendered HTML. This is especially common in E2E tests with tools like Laravel Dusk or Pest Browser Testing.
 
 You may set the `throw_on_error` option in your `config/inertia.php` file to throw an exception instead of falling back silently, allowing you to catch SSR issues early.
 
-```php
+<CodeGroup>
+
+```php Laravel icon="laravel"
 'ssr' => [
     'throw_on_error' => (bool) env('INERTIA_SSR_THROW_ON_ERROR', false),
 ],
 ```
+
+```csharp .NET icon="dotnet"
+// Program.cs
+builder.Services.AddInertia(options =>
+{
+    options.SsrEnabled = true;
+    options.SsrUrl = "http://127.0.0.1:13714/render";
+    options.SsrThrowOnError = builder.Configuration
+        .GetValue<bool>("Inertia:SsrThrowOnError");
+});
+```
+
+</CodeGroup>
 
 <Warning>This option is not recommended for production, as it will cause SSR failures to return an error response instead of falling back to client-side rendering.</Warning>
 
@@ -424,27 +490,58 @@ inertia({
 })
 ```
 
-```php config/inertia.php
+<CodeGroup>
+
+```php Laravel icon="laravel" config/inertia.php
 'ssr' => [
     'enabled' => false,
 ],
 ```
 
+```csharp .NET icon="dotnet" Program.cs
+builder.Services.AddInertia(options =>
+{
+    options.SsrEnabled = false;
+});
+```
+
+</CodeGroup>
+
 You may also prevent the Laravel adapter from dispatching SSR requests programmatically using the `Inertia::disableSsr()` method. This is useful when you want to keep SSR in your build but [disable it during tests](/v3/advanced/testing#disabling-ssr-during-tests) or in specific environments.
 
-```php
+<CodeGroup>
+
+```php Laravel icon="laravel"
 use Inertia\Inertia;
 
 Inertia::disableSsr();
 ```
 
+```csharp .NET icon="dotnet"
+using InertiaCore;
+
+Inertia.DisableSsr();
+```
+
+</CodeGroup>
+
 A boolean or closure may be provided to disable SSR conditionally.
 
-```php
+<CodeGroup>
+
+```php Laravel icon="laravel"
 Inertia::disableSsr(app()->runningUnitTests());
 
 Inertia::disableSsr(fn () => app()->runningUnitTests());
 ```
+
+```csharp .NET icon="dotnet"
+Inertia.DisableSsr(builder.Environment.IsEnvironment("Testing"));
+
+Inertia.DisableSsr(() => builder.Environment.IsEnvironment("Testing"));
+```
+
+</CodeGroup>
 
 ## Excluding Routes from SSR
 
@@ -454,7 +551,9 @@ Sometimes you may wish to skip server-side rendering for certain routes while ke
 
 You may use the `$withoutSsr` property on your Inertia middleware to disable SSR for specific route patterns.
 
-```php
+<CodeGroup>
+
+```php Laravel icon="laravel"
 use Inertia\Middleware;
 
 class HandleInertiaRequests extends Middleware
@@ -471,25 +570,65 @@ class HandleInertiaRequests extends Middleware
 }
 ```
 
+```csharp .NET icon="dotnet"
+// InertiaCore does not ship a publishable middleware class. Configure
+// the path exclusions once at startup using Inertia.WithoutSsr().
+using InertiaCore;
+
+var app = builder.Build();
+
+Inertia.WithoutSsr("admin/*", "dashboard");
+
+app.UseInertia();
+```
+
+</CodeGroup>
+
 ### Via Facade
 
 You may also exclude specific routes using the `Inertia::withoutSsr()` method, typically called from a service provider.
 
-```php
+<CodeGroup>
+
+```php Laravel icon="laravel"
 use Inertia\Inertia;
 
 Inertia::withoutSsr(['admin/*', 'dashboard']);
 ```
 
+```csharp .NET icon="dotnet"
+using InertiaCore;
+
+Inertia.WithoutSsr(new[] { "admin/*", "dashboard" });
+```
+
+</CodeGroup>
+
 ### Per-Request
 
 You may disable SSR for the current request by setting the `inertia.ssr.enabled` configuration value to `false`.
 
-```php
+<CodeGroup>
+
+```php Laravel icon="laravel"
 if (request()->is('admin/*')) {
     config(['inertia.ssr.enabled' => false]);
 }
 ```
+
+```csharp .NET icon="dotnet"
+// Resolve the current request from IHttpContextAccessor and disable
+// SSR conditionally using the Func<bool> overload.
+var httpContextAccessor = app.Services.GetRequiredService<IHttpContextAccessor>();
+
+Inertia.DisableSsr(() =>
+{
+    var path = httpContextAccessor.HttpContext?.Request.Path.Value ?? string.Empty;
+    return path.StartsWith("/admin", StringComparison.OrdinalIgnoreCase);
+});
+```
+
+</CodeGroup>
 
 ## Deployment
 
