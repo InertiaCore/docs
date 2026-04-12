@@ -21,11 +21,9 @@ return Inertia::render('Billing', [
 ```
 
 ```csharp .NET icon="dotnet"
-// InertiaCore does not have a direct Inertia.Once() method.
-// Use Inertia.Lazy() for similar deferred evaluation behavior.
 return Inertia.Render("Billing", new
 {
-    Plans = Inertia.Lazy(() => _context.Plans.ToList())
+    Plans = Inertia.Once(() => _context.Plans.ToList())
 });
 ```
 
@@ -48,11 +46,9 @@ return Inertia::render('Billing', [
 ```
 
 ```csharp .NET icon="dotnet"
-// No direct equivalent in InertiaCore.
-// Use Inertia.Lazy() to evaluate data only when explicitly requested.
 return Inertia.Render("Billing", new
 {
-    Plans = Inertia.Lazy(() => _context.Plans.ToList())
+    Plans = Inertia.Once(() => _context.Plans.ToList()).Fresh()
 });
 ```
 
@@ -69,11 +65,9 @@ return Inertia::render('Billing', [
 ```
 
 ```csharp .NET icon="dotnet"
-// No direct equivalent in InertiaCore.
-// Conditionally include the prop based on your logic.
 return Inertia.Render("Billing", new
 {
-    Plans = Inertia.Lazy(() => _context.Plans.ToList())
+    Plans = Inertia.Once(() => _context.Plans.ToList()).Fresh(condition)
 });
 ```
 
@@ -118,11 +112,10 @@ return Inertia::render('Dashboard', [
 ```
 
 ```csharp .NET icon="dotnet"
-// No direct equivalent in InertiaCore.
-// Use Inertia.Lazy() and manage caching/expiration separately.
 return Inertia.Render("Dashboard", new
 {
-    Rates = Inertia.Lazy(() => _context.ExchangeRates.ToList())
+    Rates = Inertia.Once(() => _context.ExchangeRates.ToList())
+        .Until(TimeSpan.FromDays(1))
 });
 ```
 
@@ -150,13 +143,13 @@ return Inertia::render('Team/Invite', [
 // Team member list...
 return Inertia.Render("Team/Index", new
 {
-    MemberRoles = Inertia.Lazy(() => _context.Roles.ToList())
+    MemberRoles = Inertia.Once(() => _context.Roles.ToList()).As("roles")
 });
 
 // Invite form...
 return Inertia.Render("Team/Invite", new
 {
-    AvailableRoles = Inertia.Lazy(() => _context.Roles.ToList())
+    AvailableRoles = Inertia.Once(() => _context.Roles.ToList()).As("roles")
 });
 ```
 
@@ -175,7 +168,7 @@ Inertia::share('countries', Inertia::once(fn () => Country::all()));
 ```
 
 ```csharp .NET icon="dotnet"
-Inertia.Share("countries", Inertia.Lazy(() => _context.Countries.ToList()));
+Inertia.Share("countries", Inertia.Once(() => _context.Countries.ToList()));
 ```
 
 </CodeGroup>
@@ -189,8 +182,7 @@ Inertia::shareOnce('countries', fn () => Country::all());
 ```
 
 ```csharp .NET icon="dotnet"
-// No direct ShareOnce equivalent in InertiaCore.
-Inertia.Share("countries", Inertia.Lazy(() => _context.Countries.ToList()));
+Inertia.ShareOnce("countries", () => _context.Countries.ToList());
 ```
 
 </CodeGroup>
@@ -204,8 +196,8 @@ Inertia::shareOnce('countries', fn () => Country::all())->until(now()->addDay())
 ```
 
 ```csharp .NET icon="dotnet"
-// No direct equivalent in InertiaCore. Use Inertia.Share() with Inertia.Lazy().
-Inertia.Share("countries", Inertia.Lazy(() => _context.Countries.ToList()));
+Inertia.ShareOnce("countries", () => _context.Countries.ToList())
+    .Until(TimeSpan.FromDays(1));
 ```
 
 </CodeGroup>
@@ -227,8 +219,8 @@ class HandleInertiaRequests extends Middleware
 ```
 
 ```csharp .NET icon="dotnet"
-// In your middleware or Program.cs, share data globally using Inertia.Share().
-Inertia.Share("countries", Inertia.Lazy(() => _context.Countries.ToList()));
+// Register global once props at startup (Program.cs) or in custom middleware.
+Inertia.ShareOnce("countries", () => _context.Countries.ToList());
 ```
 
 </CodeGroup>
@@ -254,11 +246,13 @@ return Inertia::render('Dashboard', [
 ```
 
 ```csharp .NET icon="dotnet"
+// Chaining .Once() onto Defer/Merge/Optional props is not supported in InertiaCore;
+// use Inertia.Once() directly when you need once-prop semantics.
 return Inertia.Render("Dashboard", new
 {
-    Permissions = Inertia.Defer(() => _context.Permissions.ToList()),
-    Activity = Inertia.Merge(() => user.RecentActivity()),
-    Categories = Inertia.Optional(() => _context.Categories.ToList())
+    Permissions = Inertia.Once(() => _context.Permissions.ToList()),
+    Activity = Inertia.Once(() => user.RecentActivity()),
+    Categories = Inertia.Once(() => _context.Categories.ToList())
 });
 ```
 
