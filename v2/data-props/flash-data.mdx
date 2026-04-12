@@ -34,18 +34,21 @@ public function store(Request $request)
 ```
 
 ```csharp .NET icon="dotnet"
-public IActionResult Store(CreateUserRequest request)
+public IActionResult Store([FromBody] CreateUserRequest request)
 {
-    var user = _context.Users.Add(new User { /* ... */ });
+    var user = _context.Users.Add(new User { /* ... */ }).Entity;
     _context.SaveChanges();
 
-    TempData["message"] = "User created successfully!";
+    Inertia.Flash("message", "User created successfully!");
 
-    // Or flash multiple values using TempData...
-    TempData["message"] = "User created!";
-    TempData["newUserId"] = user.Entity.Id;
+    // Or flash multiple values at once...
+    Inertia.Flash(new Dictionary<string, object?>
+    {
+        ["message"] = "User created!",
+        ["newUserId"] = user.Id,
+    });
 
-    return RedirectToAction("Index");
+    return Inertia.Back();
 }
 ```
 
@@ -60,8 +63,8 @@ return Inertia::flash('newUserId', $user->id)->back();
 ```
 
 ```csharp .NET icon="dotnet"
-TempData["newUserId"] = user.Id;
-return RedirectToAction("Index");
+Inertia.Flash("newUserId", user.Id);
+return Inertia.Back();
 ```
 
 </CodeGroup>
@@ -82,11 +85,10 @@ return Inertia::flash('highlight', $project->id)
 ```
 
 ```csharp .NET icon="dotnet"
-TempData["highlight"] = project.Id;
-
-return Inertia.Render("Projects/Index", new {
+return Inertia.Render("Projects/Index", new
+{
     Projects = projects,
-});
+}).Flash("highlight", project.Id);
 ```
 
 </CodeGroup>
