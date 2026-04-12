@@ -38,44 +38,45 @@ class UsersController extends Controller
 
 ```csharp .NET icon="dotnet"
 using InertiaCore;
-using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Authorization;
 
 public class UsersController : Controller
 {
-    private readonly UserManager<User> _userManager;
+    private readonly AppDbContext _context;
     private readonly IAuthorizationService _authorizationService;
 
     public UsersController(
-        UserManager<User> userManager,
+        AppDbContext context,
         IAuthorizationService authorizationService)
     {
-        _userManager = userManager;
+        _context = context;
         _authorizationService = authorizationService;
     }
 
     public async Task<IActionResult> Index()
     {
-        var currentUser = await _userManager.GetUserAsync(User);
-        var users = _context.Users.ToList();
+        var createUser = (await _authorizationService
+            .AuthorizeAsync(User, "CreateUser")).Succeeded;
 
-        return Inertia.Render("Users/Index", new
+        var users = new List<object>();
+        foreach (var user in _context.Users)
         {
-            Can = new
-            {
-                CreateUser = (await _authorizationService
-                    .AuthorizeAsync(User, "CreateUser")).Succeeded
-            },
-            Users = users.Select(user => new
+            var editUser = (await _authorizationService
+                .AuthorizeAsync(User, user, "EditUser")).Succeeded;
+
+            users.Add(new
             {
                 user.FirstName,
                 user.LastName,
                 user.Email,
-                Can = new
-                {
-                    EditUser = (_authorizationService
-                        .AuthorizeAsync(User, user, "EditUser")).Result.Succeeded
-                }
-            })
+                Can = new { EditUser = editUser },
+            });
+        }
+
+        return Inertia.Render("Users/Index", new
+        {
+            Can = new { CreateUser = createUser },
+            Users = users,
         });
     }
 }
