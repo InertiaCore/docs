@@ -101,20 +101,27 @@ use Symfony\Component\HttpFoundation\Response;
 ```
 
 ```csharp .NET icon="dotnet"
-// ASP.NET Core handles CSRF via anti-forgery tokens automatically.
-// Add anti-forgery services in Program.cs:
-builder.Services.AddAntiforgery();
+using InertiaCore;
+using Microsoft.AspNetCore.Antiforgery;
 
-// Use in the middleware pipeline:
-app.UseAntiforgery();
+// Program.cs — catch antiforgery validation failures and redirect back
+// with a flash message instead of surfacing the raw 400 to the client.
+app.UseExceptionHandler(errorApp =>
+{
+    errorApp.Run(async context =>
+    {
+        var feature = context.Features.Get<IExceptionHandlerFeature>();
+        if (feature?.Error is AntiforgeryValidationException)
+        {
+            Inertia.Share("flash", new { Message = "The page expired, please try again." });
 
-// In Razor views, include the anti-forgery token:
-// @Html.AntiForgeryToken()
-
-// Protect controller actions with the [ValidateAntiForgeryToken] attribute:
-// [HttpPost]
-// [ValidateAntiForgeryToken]
-// public IActionResult Store() { ... }
+            var result = Inertia.Back();
+            var actionContext = new ActionContext(context, context.GetRouteData(), new ActionDescriptor());
+            await result.ExecuteResultAsync(actionContext);
+            return;
+        }
+    });
+});
 ```
 
 </CodeGroup>
