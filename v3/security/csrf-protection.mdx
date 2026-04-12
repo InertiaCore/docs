@@ -82,7 +82,9 @@ Obviously, this isn't a great user experience. A better way to handle these erro
 
 When using Laravel, you may modify your application's exception handler to automatically redirect the user back to the page they were previously on while flashing a message to the session. To accomplish this, you may use the `respond` exception method in your application's `bootstrap/app.php` file.
 
-```php
+<CodeGroup>
+
+```php Laravel icon="laravel"
 use Symfony\Component\HttpFoundation\Response;
 
 ->withExceptions(function (Exceptions $exceptions) {
@@ -97,6 +99,36 @@ use Symfony\Component\HttpFoundation\Response;
     });
 });
 ```
+
+```csharp .NET icon="dotnet"
+using InertiaCore;
+using Microsoft.AspNetCore.Antiforgery;
+using Microsoft.AspNetCore.Diagnostics;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Abstractions;
+using Microsoft.AspNetCore.Mvc.Infrastructure;
+
+// Program.cs — catch antiforgery validation failures and redirect back
+// with a flash message instead of surfacing the raw 400 to the client.
+app.UseExceptionHandler(errorApp =>
+{
+    errorApp.Run(async context =>
+    {
+        var feature = context.Features.Get<IExceptionHandlerFeature>();
+        if (feature?.Error is AntiforgeryValidationException)
+        {
+            Inertia.Flash("message", "The page expired, please try again.");
+
+            var result = Inertia.Back();
+            var actionContext = new ActionContext(context, context.GetRouteData(), new ActionDescriptor());
+            await result.ExecuteResultAsync(actionContext);
+            return;
+        }
+    });
+});
+```
+
+</CodeGroup>
 
 The end result is a much better experience for your users. Instead of seeing the error modal, the user is instead presented with a message that the page "expired" and are asked to try again.
 
