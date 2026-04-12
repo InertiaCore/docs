@@ -10,7 +10,9 @@ To enable automatic asset refreshing, you need to tell Inertia the current versi
 
 Typically, your application's asset version can be specified within the `version` method of the Inertia `HandleInertiaRequests` middleware.
 
-```php
+<CodeGroup>
+
+```php Laravel icon="laravel"
 class HandleInertiaRequests extends Middleware
 {
     public function version(Request $request)
@@ -20,14 +22,40 @@ class HandleInertiaRequests extends Middleware
 }
 ```
 
+```csharp .NET icon="dotnet"
+using InertiaCore.Extensions;
+
+// In Program.cs. AddViteHelper() + UseInertia() auto-wires
+// Inertia.Version(Vite.GetManifestHash) from your Vite manifest.
+builder.Services.AddInertia();
+builder.Services.AddViteHelper();
+
+var app = builder.Build();
+
+app.UseInertia();
+```
+
+</CodeGroup>
+
 Alternatively, the asset version can be provided manually using the `Inertia::version()` method.
 
-```php
+<CodeGroup>
+
+```php Laravel icon="laravel"
 use Inertia\Inertia;
 
 Inertia::version($version);
 Inertia::version(fn () => $version); // Lazily...
 ```
+
+```csharp .NET icon="dotnet"
+using InertiaCore;
+
+Inertia.Version(version);
+Inertia.Version(() => version); // Lazily...
+```
+
+</CodeGroup>
 
 ## Cache Busting
 
@@ -41,7 +69,9 @@ If you want to take asset refreshing into your control, you can return a fixed v
 
 For example, if you want to notify users when a new version of your frontend is available, you can still expose the actual asset version to the frontend by including it as [shared data](/v3/data-props/shared-data).
 
-```php
+<CodeGroup>
+
+```php Laravel icon="laravel"
 class HandleInertiaRequests extends Middleware
 {
     public function version(Request $request)
@@ -57,5 +87,18 @@ class HandleInertiaRequests extends Middleware
     }
 }
 ```
+
+```csharp .NET icon="dotnet"
+using InertiaCore;
+using InertiaCore.Utils;
+
+// Pin a fixed version to disable automatic asset-driven reloads,
+// then expose the real asset version as shared data.
+Inertia.Version("1.0.0");
+
+Inertia.Share("version", Vite.GetManifestHash());
+```
+
+</CodeGroup>
 
 On the frontend, you can watch the `version` property and show a notification when a new version is detected.
