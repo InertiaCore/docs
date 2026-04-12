@@ -71,7 +71,9 @@ These starter kits are the absolute fastest way to start building a new Inertia 
 
         Once the middleware has been published, append the `HandleInertiaRequests` middleware to the `web` middleware group in your application's `bootstrap/app.php` file.
 
-        ```php
+        <CodeGroup>
+
+        ```php Laravel icon="laravel"
         use App\Http\Middleware\HandleInertiaRequests;
 
         ->withMiddleware(function (Middleware $middleware) {
@@ -81,13 +83,30 @@ These starter kits are the absolute fastest way to start building a new Inertia 
         })
         ```
 
+        ```csharp .NET icon="dotnet"
+        // In Program.cs
+        using InertiaCore.Extensions;
+
+        var builder = WebApplication.CreateBuilder(args);
+
+        builder.Services.AddInertia();
+
+        var app = builder.Build();
+
+        app.UseInertia();
+        ```
+
+        </CodeGroup>
+
         This middleware provides a `version()` method for setting your [asset version](/v3/advanced/asset-versioning), as well as a `share()` method for defining [shared data](/v3/data-props/shared-data).
     </Step>
 
     <Step title="Create your first response">
         That's it, you're all ready to go server-side! Now you're ready to start creating Inertia [pages](/v3/the-basics/pages) and rendering them via [responses](/v3/the-basics/responses).
 
-        ```php
+        <CodeGroup>
+
+        ```php Laravel icon="laravel"
         use Inertia\Inertia;
 
         class EventsController extends Controller
@@ -105,6 +124,29 @@ These starter kits are the absolute fastest way to start building a new Inertia 
             }
         }
         ```
+
+        ```csharp .NET icon="dotnet"
+        using InertiaCore;
+
+        public class EventsController : Controller
+        {
+            public IActionResult Show(int id)
+            {
+                var eventItem = _context.Events.Find(id);
+
+                return Inertia.Render("Event/Show", new {
+                    Event = new {
+                        eventItem.Id,
+                        eventItem.Title,
+                        eventItem.StartDate,
+                        eventItem.Description,
+                    },
+                });
+            }
+        }
+        ```
+
+        </CodeGroup>
     </Step>
 
 </Steps>
