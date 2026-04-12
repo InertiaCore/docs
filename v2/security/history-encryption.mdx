@@ -33,6 +33,9 @@ Inertia::encryptHistory(false);
 ```
 
 ```csharp .NET icon="dotnet"
+// Enable globally via InertiaOptions in Program.cs:
+//   builder.Services.AddInertia(options => options.EncryptHistory = true);
+// Then opt a specific action out by passing false before returning a response.
 Inertia.EncryptHistory(false);
 ```
 
@@ -71,24 +74,22 @@ Route::middleware(['inertia::encrypt'])->get('/', function() {
 ```
 
 ```csharp .NET icon="dotnet"
-// In ASP.NET, you can call Inertia.EncryptHistory()
-// in a custom middleware applied to specific routes,
-// or call it directly in a controller action.
+using InertiaCore;
+using InertiaCore.Utils;
 
-public class EncryptHistoryMiddleware
+// Enable globally on the whole pipeline:
+app.UseInertiaEncryptHistory();
+
+// Or scope the built-in EncryptHistoryMiddleware to a branch of routes:
+app.UseWhen(
+    ctx => ctx.Request.Path.StartsWithSegments("/admin"),
+    branch => branch.UseMiddleware<EncryptHistoryMiddleware>());
+
+// Or apply the [EncryptHistory] attribute to a controller or action:
+[EncryptHistory]
+public class AdminController : Controller
 {
-    private readonly RequestDelegate _next;
-
-    public EncryptHistoryMiddleware(RequestDelegate next)
-    {
-        _next = next;
-    }
-
-    public async Task InvokeAsync(HttpContext context)
-    {
-        Inertia.EncryptHistory();
-        await _next(context);
-    }
+    public IActionResult Index() => Inertia.Render("Admin/Index");
 }
 ```
 
