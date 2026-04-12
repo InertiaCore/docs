@@ -6,35 +6,64 @@ import V1EOLWarning from "/snippets/v1-eol-warning.mdx";
 
 <V1EOLWarning />
 
-The first step when installing Inertia is to configure your server-side framework. Inertia maintains an official server-side adapter for [Laravel](https://laravel.com/). For other frameworks, please see the [community adapters](/community-adapters).
+The first step when installing Inertia is to configure your server-side framework. These docs are written from the perspective of **InertiaCore**, the ASP.NET Core adapter — `AspNetCore.InertiaCore` on NuGet. Examples for the [Laravel adapter](https://inertiajs.com) are included as a tab in every code block so you can follow along in either runtime.
 
-Inertia is fine-tuned for Laravel, so the documentation examples on this website utilize Laravel. For examples of using Inertia with other server-side frameworks, please refer to the framework specific documentation maintained by that adapter.
+<Card
+    icon="dotnet"
+    title="Scaffold a new InertiaCore app"
+    href="https://www.npmjs.com/package/create-inertiacore"
+    arrow="true"
+    cta="Start building"
+>
+The fastest way to start a new Inertia project on ASP.NET Core is the `create-inertiacore` scaffolder, which wires up `AspNetCore.InertiaCore`, Vite, and your frontend framework of choice (Vue, React, or Svelte) in one step:
 
-## Laravel Starter Kits
+```sh
+npm init inertiacore@latest
+# or
+npx create-inertiacore@latest
+```
 
-Laravel's [starter kits](https://laravel.com/docs/starter-kits), Breeze and Jetstream, provide out-of-the-box scaffolding for new Inertia applications. These starter kits are the absolute fastest way to start building a new Inertia project using Laravel and Vue or React. However, if you would like to manually install Inertia into your application, please consult the documentation below.
+If you'd prefer to add InertiaCore to an existing ASP.NET Core project, follow the manual steps below.
+
+</Card>
 
 ## Install Dependencies
 
-First, install the Inertia server-side adapter using the Composer package manager.
+Install the InertiaCore server-side adapter. The Vite helper is optional but recommended — it auto-wires `Inertia.Version(Vite.GetManifestHash)` so cached assets get invalidated automatically.
 
 <CodeGroup>
 
-```bash Laravel icon="laravel"
-composer require inertiajs/inertia-laravel
+```sh .NET icon="dotnet"
+dotnet add package AspNetCore.InertiaCore
 ```
 
-```bash .NET icon="dotnet"
-dotnet add package AspNetCore.InertiaCore
+```bash Laravel icon="laravel"
+composer require inertiajs/inertia-laravel
 ```
 
 </CodeGroup>
 
 ## Root Template
 
-Next, setup the root template that will be loaded on the first page visit to your application. This will be used to load your site assets (CSS and JavaScript), and will also contain a root `<div>` in which to boot your JavaScript application.
+Next, set up the root template that will be loaded on the first page visit. This template loads your site assets (CSS and JavaScript) and contains the root `<div>` in which your JavaScript application will boot. InertiaCore renders it via `@await Inertia.Html(Model)` and optionally `@await Inertia.Head(Model)` for [SSR](/v1/advanced/server-side-rendering) head fallback content.
 
 <CodeGroup>
+
+```cshtml .NET icon="dotnet"
+@using InertiaCore
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
+        @Vite.Input("src/app.tsx")
+        @await Inertia.Head(Model)
+    </head>
+    <body>
+        @await Inertia.Html(Model)
+    </body>
+</html>
+```
 
 ```blade Laravel icon="laravel"
 <html>
@@ -50,49 +79,37 @@ Next, setup the root template that will be loaded on the first page visit to you
 </html>
 ```
 
-```html .NET icon="dotnet"
-@using InertiaCore
-<html>
-    <head>
-        <meta charset="utf-8" />
-        <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
-        @Vite.Input("src/app.js")
-        @await Inertia.Head(Model)
-    </head>
-    <body>
-        @await Inertia.Html(Model)
-    </body>
-</html>
-```
-
 </CodeGroup>
 
-This template should include your assets, as well as the `@inertia` and `@inertiaHead`directives.
+By default, InertiaCore looks for a root view at `~/Views/App.cshtml`. You can change the root view path via `builder.Services.AddInertia(options => options.RootView = "~/Views/Layouts/Inertia.cshtml");`.
 
-By default, Inertia's Laravel adapter will assume your root template is named `app.blade.php`. If you would like to use a different root view, you can change it using the `Inertia::setRootView()` method.
+## Register InertiaCore
 
-## Middleware
-
-Next we need to setup the Inertia middleware. You can accomplish this by publishing the `HandleInertiaRequests` middleware to your application, which can be done using the following Artisan command.
+Register InertiaCore in `Program.cs` with `AddInertia()` and insert the middleware into the request pipeline with `UseInertia()`. No CLI publish step is required — the middleware is shipped inside the NuGet package.
 
 <CodeGroup>
-
-```sh Laravel icon="laravel"
-php artisan inertia:middleware
-```
 
 ```csharp .NET icon="dotnet"
-// No CLI command needed — InertiaCore's middleware is wired up
-// directly in Program.cs (see the next snippet).
+// Program.cs
+using InertiaCore.Extensions;
+
+var builder = WebApplication.CreateBuilder(args);
+
+builder.Services.AddControllersWithViews();
+builder.Services.AddInertia();
+builder.Services.AddViteHelper();
+
+var app = builder.Build();
+
+app.UseStaticFiles();
+app.UseInertia();
+app.MapControllers();
+
+app.Run();
 ```
 
-</CodeGroup>
-
-Once the middleware has been published, append the `HandleInertiaRequests` middleware to the `web` middleware group in your application's `bootstrap/app.php` file.
-
-<CodeGroup>
-
 ```php Laravel icon="laravel"
+// bootstrap/app.php
 use App\Http\Middleware\HandleInertiaRequests;
 
 ->withMiddleware(function (Middleware $middleware) {
@@ -102,29 +119,43 @@ use App\Http\Middleware\HandleInertiaRequests;
 })
 ```
 
-```csharp .NET icon="dotnet"
-using InertiaCore.Extensions;
-
-// In Program.cs
-var builder = WebApplication.CreateBuilder(args);
-
-builder.Services.AddInertia();
-builder.Services.AddViteHelper();
-
-var app = builder.Build();
-
-app.UseInertia();
-```
-
 </CodeGroup>
 
-This middleware provides a `version()` method for setting your [asset version](/v1/advanced/asset-versioning), as well as a `share()` method for defining [shared data](/v1/the-basics/shared-data).
+`UseInertia()` registers the InertiaCore middleware, which handles protocol headers, partial reloads, validation-error forwarding, and asset versioning. Use `Inertia.Version(...)` to set your [asset version](/v1/advanced/asset-versioning) and `Inertia.Share(...)` to define [shared data](/v1/the-basics/shared-data).
 
 ## Creating Responses
 
-That's it, you're all ready to go server-side! Now you're ready to start creating Inertia [pages](/v1/the-basics/pages) and rendering them via [responses](/v1/the-basics/responses).
+That's it, you're all ready to go server-side! Return an Inertia response from a controller with `Inertia.Render("Component", props)`. The component path maps to a JavaScript [page](/v1/the-basics/pages) under your frontend source tree.
 
 <CodeGroup>
+
+```csharp .NET icon="dotnet"
+using InertiaCore;
+
+public class EventsController : Controller
+{
+    private readonly AppDbContext _context;
+
+    public EventsController(AppDbContext context) => _context = context;
+
+    [HttpGet("/events/{id:int}")]
+    public IActionResult Show(int id)
+    {
+        var evt = _context.Events.Find(id);
+
+        return Inertia.Render("Event/Show", new
+        {
+            Event = new
+            {
+                evt.Id,
+                evt.Title,
+                evt.StartDate,
+                evt.Description,
+            },
+        });
+    }
+}
+```
 
 ```php Laravel icon="laravel"
 use Inertia\Inertia;
@@ -141,27 +172,6 @@ class EventsController extends Controller
                 'description'
             ),
         ]);
-    }
-}
-```
-
-```csharp .NET icon="dotnet"
-using InertiaCore;
-
-public class EventsController : Controller
-{
-    public IActionResult Show(int id)
-    {
-        var evt = _context.Events.Find(id);
-
-        return Inertia.Render("Event/Show", new {
-            Event = new {
-                evt.Id,
-                evt.Title,
-                evt.StartDate,
-                evt.Description,
-            },
-        });
     }
 }
 ```
