@@ -16,10 +16,15 @@ const config = {
     preprocessor: ({ filePath, fileContent }) => {
       // Use pathname:// protocol for absolute image paths so Docusaurus
       // skips local file resolution (assets are copied via webpack plugin).
-      return fileContent.replace(
+      let out = fileContent.replace(
         /!\[([^\]]*)\]\((\/[^)]+)\)/g,
         "![$1](pathname://$2)",
       );
+      // Rewrite legacy version links to their new /docs/N.x routes.
+      out = out.replace(/\]\(\/v1\//g, "](/docs/1.x/");
+      out = out.replace(/\]\(\/v2\//g, "](/docs/2.x/");
+      out = out.replace(/\]\(\/v3\//g, "](/docs/3.x/");
+      return out;
     },
   },
 
@@ -35,7 +40,7 @@ const config = {
       ({
         docs: {
           path: path.resolve(docsRoot, "v2"),
-          routeBasePath: "v2",
+          routeBasePath: "docs/2.x",
           sidebarPath: "./sidebars-v2.js",
         },
         blog: false,
@@ -54,8 +59,17 @@ const config = {
       {
         id: "v1",
         path: path.resolve(docsRoot, "v1"),
-        routeBasePath: "v1",
+        routeBasePath: "docs/1.x",
         sidebarPath: "./sidebars-v1.js",
+      },
+    ],
+    [
+      "@docusaurus/plugin-content-docs",
+      {
+        id: "v3",
+        path: path.resolve(docsRoot, "v3"),
+        routeBasePath: "docs/3.x",
+        sidebarPath: "./sidebars-v3.js",
       },
     ],
     "docusaurus-markdown-source-plugin",
@@ -135,29 +149,23 @@ const config = {
             return fileList;
           }
 
-          const versions = ["v1", "v2"];
+          const versions = [
+            { src: "v1", route: "docs/1.x" },
+            { src: "v2", route: "docs/2.x" },
+            { src: "v3", route: "docs/3.x" },
+          ];
           let total = 0;
 
-          for (const version of versions) {
-            const srcDir = path.resolve(docsRoot, version);
+          for (const { src, route } of versions) {
+            const srcDir = path.resolve(docsRoot, src);
             if (!fs.existsSync(srcDir)) continue;
 
             for (const relFile of findMdxFiles(srcDir)) {
               const srcPath = path.join(srcDir, relFile);
-              // Convert .mdx extension to .md and place under the version route
               const mdName = relFile.replace(/\.mdx$/, ".md");
-              // Build outputs pages as dirs (e.g. /v2/the-basics/pages/index.html).
-              // The Root.js dropdown constructs: pathname + ".md" or pathname + "index.md".
-              // For a file like "pages.mdx" the route is /v2/the-basics/pages so
-              // the dropdown requests /v2/the-basics/pages.md — write both locations.
               const baseName = mdName.replace(/\.md$/, "");
-              const destDirect = path.join(outDir, version, mdName);
-              const destIndex = path.join(
-                outDir,
-                version,
-                baseName,
-                "index.md",
-              );
+              const destDirect = path.join(outDir, route, mdName);
+              const destIndex = path.join(outDir, route, baseName, "index.md");
 
               try {
                 const raw = await fs.readFile(srcPath, "utf8");
@@ -170,7 +178,7 @@ const config = {
                 total++;
               } catch (err) {
                 console.error(
-                  `[markdown-source] Failed: ${version}/${relFile}:`,
+                  `[markdown-source] Failed: ${src}/${relFile}:`,
                   err.message,
                 );
               }
@@ -189,7 +197,6 @@ const config = {
     /** @type {import('@docusaurus/preset-classic').ThemeConfig} */
     ({
       navbar: {
-        title: "Inertia.js",
         logo: {
           alt: "Inertia.js",
           src: "logo/light.svg",
@@ -197,10 +204,15 @@ const config = {
         },
         items: [
           {
-            type: "docsVersionDropdown",
+            type: "dropdown",
             position: "left",
-            dropdownItemsAfter: [],
-            dropdownActiveClassDisabled: true,
+            label: "2.x",
+            className: "navbar-version-dropdown",
+            items: [
+              { label: "3.x", to: "/docs/3.x" },
+              { label: "2.x", to: "/docs/2.x" },
+              { label: "1.x", to: "/docs/1.x" },
+            ],
           },
         ],
       },
@@ -212,11 +224,7 @@ const config = {
             items: [
               {
                 label: "GitHub",
-                href: "https://github.com/inertiajs",
-              },
-              {
-                label: "Twitter",
-                href: "https://x.com/inertiajs",
+                href: "https://github.com/inertiacore",
               },
             ],
           },

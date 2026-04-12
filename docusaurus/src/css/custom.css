@@ -1,0 +1,85 @@
+@import url("https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400..500&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Geist+Mono:wght@300..600&display=swap");
+
+:root {
+  --ifm-color-primary: #512bd4;
+  --ifm-color-primary-dark: #4923bf;
+  --ifm-color-primary-darker: #4521b4;
+  --ifm-color-primary-darkest: #391b94;
+  --ifm-color-primary-light: #6344d9;
+  --ifm-color-primary-lighter: #6e51db;
+  --ifm-color-primary-lightest: #8a74e2;
+
+  --ifm-font-family-base: "Instrument Sans", system-ui, -apple-system, sans-serif;
+  --ifm-font-family-monospace: "Geist Mono", ui-monospace, SFMono-Regular, Menlo,
+    Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  --ifm-heading-font-weight: 500;
+}
+
+[data-theme="dark"] {
+  --ifm-color-primary: #8a74e2;
+  --ifm-color-primary-dark: #6e51db;
+  --ifm-color-primary-darker: #6344d9;
+  --ifm-color-primary-darkest: #512bd4;
+  --ifm-color-primary-light: #a090e9;
+  --ifm-color-primary-lighter: #afa1ec;
+  --ifm-color-primary-lightest: #c8bef3;
+}
+
+h1,
+h2,
+h3,
+h4 {
+  font-weight: 500 !important;
+  letter-spacing: -0.025rem !important;
+}
+
+b,
+strong {
+  font-weight: 500 !important;
+}
+
+/* Lay out the h1 and the "Open Markdown" dropdown on one row */
+article .markdown > header:has(.markdown-actions-container) {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+article .markdown > header:has(.markdown-actions-container) > h1 {
+  margin: 0;
+}
+
+/* Steps styling */
+.mintlify-steps {
+  counter-reset: step-counter;
+  padding-left: 0;
+}
+
+.mintlify-step {
+  counter-increment: step-counter;
+  position: relative;
+  padding-left: 2.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.mintlify-step::before {
+  content: counter(step-counter);
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 1.75rem;
+  height: 1.75rem;
+  background: var(--ifm-color-primary);
+  color: #fff;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.85rem;
+  font-weight: 500;
+}
+
+.mintlify-step h3 {
+  margin-top: 0;
+}
