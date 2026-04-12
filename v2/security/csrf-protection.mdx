@@ -93,62 +93,29 @@ use Symfony\Component\HttpFoundation\Response;
 ```csharp .NET icon="dotnet"
 using InertiaCore;
 using Microsoft.AspNetCore.Antiforgery;
-using Microsoft.AspNetCore.Mvc.ViewFeatures;
+using Microsoft.AspNetCore.Diagnostics;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Abstractions;
+using Microsoft.AspNetCore.Mvc.Infrastructure;
 
-public class CsrfMiddleware
+// Program.cs — catch antiforgery validation failures and redirect back
+// with a flash message instead of surfacing the raw 400 to the client.
+app.UseExceptionHandler(errorApp =>
 {
-    private readonly RequestDelegate _next;
-
-    public CsrfMiddleware(RequestDelegate next)
+    errorApp.Run(async context =>
     {
-        _next = next;
-    }
-
-    public async Task InvokeAsync(HttpContext context)
-    {
-        var antiforgery = context.RequestServices
-            .GetRequiredService<IAntiforgery>();
-        var method = context.Request.Method.ToUpperInvariant();
-        var isSafeMethod = method is "GET" or "HEAD"
-            or "OPTIONS" or "TRACE";
-
-        if (!isSafeMethod)
+        var feature = context.Features.Get<IExceptionHandlerFeature>();
+        if (feature?.Error is AntiforgeryValidationException)
         {
-            try
-            {
-                await antiforgery.ValidateRequestAsync(context);
-            }
-            catch (AntiforgeryValidationException)
-            {
-                var factory = context.RequestServices
-                    .GetRequiredService<ITempDataDictionaryFactory>();
-                var tempData = factory.GetTempData(context);
-                tempData["flash.error"] =
-                    "The page expired, please try again.";
-                tempData.Save();
+            Inertia.Flash("message", "The page expired, please try again.");
 
-                var referrer = context.Request.Headers["Referer"]
-                    .ToString() ?? "/";
-                context.Response.StatusCode = 409;
-                context.Response.Headers["X-Inertia-Location"] =
-                    referrer;
-                return;
-            }
+            var result = Inertia.Back();
+            var actionContext = new ActionContext(context, context.GetRouteData(), new ActionDescriptor());
+            await result.ExecuteResultAsync(actionContext);
+            return;
         }
-
-        var tokens = antiforgery.GetAndStoreTokens(context);
-        context.Response.Cookies.Append("XSRF-TOKEN",
-            tokens.RequestToken!, new CookieOptions
-            {
-                HttpOnly = false,
-                Secure = true,
-                SameSite = SameSiteMode.Strict,
-                Path = "/"
-            });
-
-        await _next(context);
-    }
-}
+    });
+});
 ```
 
 </CodeGroup>
