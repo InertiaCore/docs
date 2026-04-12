@@ -23,14 +23,27 @@ Route::get('/users', function () {
 ```
 
 ```csharp .NET icon="dotnet"
-public IActionResult Index()
+public IActionResult Index([FromQuery] int page = 1)
 {
-    var users = _context.Users
-        .Paginate(Request);
+    const int perPage = 15;
+    var total = _context.Users.Count();
+    var items = _context.Users
+        .OrderBy(u => u.Id)
+        .Skip((page - 1) * perPage)
+        .Take(perPage)
+        .ToList();
+
+    var data = new { data = items };
+    var metadata = new ScrollMetadata(
+        pageName: "page",
+        previousPage: page > 1 ? page - 1 : null,
+        nextPage: page * perPage < total ? page + 1 : null,
+        currentPage: page
+    );
 
     return Inertia.Render("Users/Index", new
     {
-        Users = Inertia.Merge(users)
+        Users = Inertia.Scroll(data, metadata: metadata)
     });
 }
 ```
@@ -916,15 +929,34 @@ Route::get('/dashboard', function () {
 ```
 
 ```csharp .NET icon="dotnet"
-public IActionResult Dashboard()
+public IActionResult Dashboard(
+    [FromQuery(Name = "users")] int usersPage = 1,
+    [FromQuery(Name = "orders")] int ordersPage = 1)
 {
-    var users = _context.Users.Paginate(Request);
-    var orders = _context.Orders.Paginate(Request);
+    const int perPage = 15;
+
+    var users = new
+    {
+        data = _context.Users
+            .OrderBy(u => u.Id)
+            .Skip((usersPage - 1) * perPage)
+            .Take(perPage)
+            .ToList()
+    };
+
+    var orders = new
+    {
+        data = _context.Orders
+            .OrderBy(o => o.Id)
+            .Skip((ordersPage - 1) * perPage)
+            .Take(perPage)
+            .ToList()
+    };
 
     return Inertia.Render("Dashboard", new
     {
-        Users = Inertia.Merge(users),
-        Orders = Inertia.Merge(orders)
+        Users = Inertia.Scroll(users, metadata: new ScrollMetadata("users", currentPage: usersPage)),
+        Orders = Inertia.Scroll(orders, metadata: new ScrollMetadata("orders", currentPage: ordersPage))
     });
 }
 ```
@@ -1032,8 +1064,11 @@ Inertia::scroll(UserResource::collection(User::paginate(20)));
 ```
 
 ```csharp .NET icon="dotnet"
-// Use Inertia.Merge() for mergeable pagination data...
-Inertia.Merge(_context.Users.Paginate(Request, perPage: 20));
+// Provide a paginated payload plus metadata describing page boundaries...
+Inertia.Scroll(
+    new { data = users },
+    metadata: new ScrollMetadata("page", currentPage: page, nextPage: page + 1)
+);
 ```
 
 </CodeGroup>
@@ -1051,8 +1086,11 @@ Inertia::scroll($data, metadata: $metadataProvider);
 ```
 
 ```csharp .NET icon="dotnet"
-// Use Inertia.Merge() with your custom paginated data...
-Inertia.Merge(customPaginatedData);
+// Customize the data wrapper key (defaults to "data")...
+Inertia.Scroll(customPaginatedData, wrapper: "items");
+
+// Provide custom metadata resolution...
+Inertia.Scroll(customPaginatedData, metadata: metadataProvider);
 ```
 
 </CodeGroup>
@@ -1075,8 +1113,19 @@ class FractalScrollMetadata implements ProvidesScrollMetadata
 ```
 
 ```csharp .NET icon="dotnet"
-// InertiaCore does not have a direct equivalent of ProvidesScrollMetadata.
-// Use Inertia.Merge() with your own pagination metadata.
+using InertiaCore.Utils;
+
+public class FractalScrollMetadata : IScrollMetadata
+{
+    private readonly object _resource;
+
+    public FractalScrollMetadata(object resource) => _resource = resource;
+
+    public string GetPageName() => "page";
+    public object? GetPreviousPage() => null;
+    public object? GetNextPage() => null;
+    public object? GetCurrentPage() => null;
+}
 ```
 
 </CodeGroup>
@@ -1097,8 +1146,11 @@ Inertia::scroll(
 ```
 
 ```csharp .NET icon="dotnet"
-// Use Inertia.Merge() with a callback for deferred evaluation...
-Inertia.Merge(() => TransformData(data));
+// Using an instance directly...
+Inertia.Scroll(data, metadata: new FractalScrollMetadata(data));
+
+// Using a callback for deferred evaluation...
+Inertia.Scroll(() => TransformData(data), metadata: new FractalScrollMetadata(data));
 ```
 
 </CodeGroup>
@@ -1124,15 +1176,15 @@ return Inertia::render('Users/Index', [
 
 ```csharp .NET icon="dotnet"
 // Create a helper method in a base controller or service...
-public static MergeProp MergeCollection(object data)
+public static ScrollProp FractalScroll(object data)
 {
-    return Inertia.Merge(data);
+    return Inertia.Scroll(data, metadata: new FractalScrollMetadata(data));
 }
 
 // Then use it in your controllers...
 return Inertia.Render("Users/Index", new
 {
-    Users = MergeCollection(fractalCollection)
+    Users = FractalScroll(fractalCollection)
 });
 ```
 
