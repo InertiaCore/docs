@@ -50,7 +50,7 @@ Next, setup the root template that will be loaded on the first page visit to you
 </html>
 ```
 
-```html .NET (Razor) icon="dotnet"
+```html .NET icon="dotnet"
 @using InertiaCore
 <html>
     <head>
@@ -82,11 +82,8 @@ php artisan inertia:middleware
 ```
 
 ```csharp .NET icon="dotnet"
-// No artisan command needed. In Program.cs, add:
-builder.Services.AddInertia();
-
-// Then in the middleware pipeline:
-app.UseInertia();
+// No CLI command needed — InertiaCore's middleware is wired up
+// directly in Program.cs (see the next snippet).
 ```
 
 </CodeGroup>
