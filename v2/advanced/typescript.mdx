@@ -2,6 +2,10 @@
 title: TypeScript
 ---
 
+import V2UpgradeWarning from "/snippets/v2-upgrade-warning.mdx";
+
+<V2UpgradeWarning />
+
 Inertia provides first-class TypeScript support. You may configure global types using declaration merging, and pass generics to hooks and router methods for type-safe props, forms, and state management.
 
 ## Using pnpm
@@ -26,6 +30,8 @@ You may configure Inertia's types globally by augmenting the `InertiaConfig` int
 
 ```ts
 // global.d.ts
+import '@inertiajs/core'
+
 declare module "@inertiajs/core" {
   export interface InertiaConfig {
     sharedPageProps: {
@@ -41,7 +47,7 @@ declare module "@inertiajs/core" {
 ```
 
 <Note>
-For module augmentation to work, your `tsconfig.json` needs to include `.d.ts` files. Make sure a pattern like `"resources/js/**/*.d.ts"` is present in the `include` array, adjusted to match your project's directory structure.
+The `import` statement (or `export {}`) is required to make this file a module. Without it, `declare module` replaces the module definition instead of augmenting it. Your `tsconfig.json` also needs to include `.d.ts` files, so make sure a pattern like `"resources/js/**/*.d.ts"` is present in the `include` array.
 </Note>
 
 ### Shared Page Props

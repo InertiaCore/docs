@@ -2,6 +2,10 @@
 title: Server-Side Setup
 ---
 
+import V2UpgradeWarning from "/snippets/v2-upgrade-warning.mdx";
+
+<V2UpgradeWarning />
+
 The first step when installing Inertia is to configure your server-side framework. Inertia maintains an official server-side adapter for [Laravel](https://laravel.com/) and a community adapter for [ASP.NET Core](https://github.com/kapi2289/InertiaCore). For other frameworks, please see the [community adapters](/v2/installation/community-adapters).
 
 Inertia is fine-tuned for Laravel, so the documentation examples on this website utilize Laravel. For examples of using Inertia with other server-side frameworks, please refer to the framework specific documentation maintained by that adapter.
@@ -16,6 +20,7 @@ Inertia is fine-tuned for Laravel, so the documentation examples on this website
 Laravel's starter kits provide out-of-the-box scaffolding for new Inertia applications.
 
 These starter kits are the absolute fastest way to start building a new Inertia project using Laravel and Vue or React. However, if you would like to manually install Inertia into your application, please consult the documentation below.
+
 </Card>
 
 ## Installation
@@ -38,7 +43,7 @@ These starter kits are the absolute fastest way to start building a new Inertia 
     </Step>
 
     <Step title="Setup root template">
-        Next, setup the root template that will be loaded on the first page visit to your application. This template should include your site's CSS and JavaScript assets, along with the `@inertia` and `@inertiaHead` directives.
+        Next, create a `resources/views/app.blade.php` file. This root template will be loaded on the first page visit to your application, and should include your assets along with the `@inertia` and `@inertiaHead` directives.
 
         <CodeGroup>
 

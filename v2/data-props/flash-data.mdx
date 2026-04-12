@@ -2,6 +2,10 @@
 title: Flash Data
 ---
 
+import V2UpgradeWarning from "/snippets/v2-upgrade-warning.mdx";
+
+<V2UpgradeWarning />
+
 <Badge>v2.3.3+</Badge>
 
 Sometimes you may wish to send one-time data to your frontend that shouldn't reappear when users navigate through browser history. Unlike regular props, flash data isn't persisted in history state, making it ideal for success messages, newly created IDs, or other temporary values.
@@ -240,7 +244,7 @@ document.addEventListener('inertia:flash', (event) => {
 
 </CodeGroup>
 
-The `flash` event is not cancelable. During [partial reloads](/v2/data-props/partial-reloads), it only fires if the flash data has changed.
+The `flash` event is not cancelable and fires on every response that carries flash data.
 
 ## Client-Side Flash
 
