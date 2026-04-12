@@ -144,7 +144,9 @@ When using the Vue adapters, you may also access the errors via the `$page.props
 
 By default, Inertia's Laravel adapter returns only the first validation error for each field. You may opt-in to receiving all errors by setting the `$withAllErrors` property to `true` in your middleware.
 
-```php
+<CodeGroup>
+
+```php Laravel icon="laravel"
 class HandleInertiaRequests extends Middleware
 {
     protected $withAllErrors = true;
@@ -152,6 +154,19 @@ class HandleInertiaRequests extends Middleware
     // ...
 }
 ```
+
+```csharp .NET icon="dotnet"
+using InertiaCore;
+
+var builder = WebApplication.CreateBuilder(args);
+
+builder.Services.AddInertia(options =>
+{
+    options.WithAllErrors = true;
+});
+```
+
+</CodeGroup>
 
 When enabled, each field will contain an array of error strings instead of a single string.
 
