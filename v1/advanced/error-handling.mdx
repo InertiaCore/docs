@@ -46,18 +46,23 @@ use Inertia\Inertia;
 
 ```csharp .NET icon="dotnet"
 using InertiaCore;
+using Microsoft.AspNetCore.Mvc;
 
-// In Program.cs, add custom exception handling middleware
-app.UseStatusCodePagesWithReExecute("/Error/{0}");
+// Program.cs
+if (!app.Environment.IsDevelopment())
+{
+    app.UseExceptionHandler("/Error/500");
+    app.UseStatusCodePagesWithReExecute("/Error/{0}");
+}
 
-// In a dedicated ErrorController
 public class ErrorController : Controller
 {
-    [Route("Error/{statusCode}")]
-    public IActionResult HttpStatusCodeHandler(int statusCode)
+    [Route("Error/{statusCode:int}")]
+    public IActionResult Handle(int statusCode)
     {
         if (new[] { 500, 503, 404, 403 }.Contains(statusCode))
         {
+            HttpContext.Response.StatusCode = statusCode;
             return Inertia.Render("Error", new { Status = statusCode });
         }
 
