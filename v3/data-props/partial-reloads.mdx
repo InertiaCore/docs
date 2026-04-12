@@ -132,30 +132,61 @@ import { inertia, Link } from '@inertiajs/svelte'
 
 For partial reloads to be most effective, be sure to also use lazy data evaluation when returning props from your server-side routes or controllers. This can be accomplished by wrapping all optional page data in a closure.
 
-```php
+<CodeGroup>
+
+```php Laravel icon="laravel"
 return Inertia::render('Users/Index', [
     'users' => fn () => User::all(),
     'companies' => fn () => Company::all(),
 ]);
 ```
 
+```csharp .NET icon="dotnet"
+return Inertia.Render("Users/Index", new {
+    Users = Inertia.Lazy(() => _context.Users.ToList()),
+    Companies = Inertia.Lazy(() => _context.Companies.ToList()),
+});
+```
+
+</CodeGroup>
+
 When Inertia performs a request, it will determine which data is required and only then will it evaluate the closure. This can significantly increase the performance of pages that contain a lot of optional data.
 
 Additionally, Inertia provides an `Inertia::optional()` method to specify that a prop should never be included unless explicitly requested using the `only` option:
 
-```php
+<CodeGroup>
+
+```php Laravel icon="laravel"
 return Inertia::render('Users/Index', [
     'users' => Inertia::optional(fn () => User::all()),
 ]);
 ```
 
+```csharp .NET icon="dotnet"
+return Inertia.Render("Users/Index", new {
+    Users = Inertia.Optional(() => _context.Users.ToList()),
+});
+```
+
+</CodeGroup>
+
 On the inverse, you can use the `Inertia::always()` method to specify that a prop should always be included, even if it has not been explicitly required in a partial reload.
 
-```php
+<CodeGroup>
+
+```php Laravel icon="laravel"
 return Inertia::render('Users/Index', [
     'users' => Inertia::always(User::all()),
 ]);
 ```
+
+```csharp .NET icon="dotnet"
+return Inertia.Render("Users/Index", new {
+    Users = Inertia.Always(() => _context.Users.ToList()),
+});
+```
+
+</CodeGroup>
 
 Here's a summary of each approach:
 
@@ -205,10 +236,20 @@ router.reload({
 
 You may chain the `once()` modifier onto an optional prop to ensure the data is resolved only once and remembered by the client across subsequent navigations.
 
-```php
+<CodeGroup>
+
+```php Laravel icon="laravel"
 return Inertia::render('Users/Index', [
     'users' => Inertia::optional(fn () => User::all())->once(),
 ]);
 ```
+
+```csharp .NET icon="dotnet"
+return Inertia.Render("Users/Index", new {
+    Users = Inertia.Once(() => _context.Users.ToList()),
+});
+```
+
+</CodeGroup>
 
 For more information on once props, see the [once props](/v3/data-props/once-props) documentation.
