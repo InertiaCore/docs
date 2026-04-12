@@ -20,11 +20,7 @@ Route::inertia('/about', 'About');
 ```
 
 ```csharp .NET icon="dotnet"
-// In your controller, create a dedicated action
-public IActionResult About()
-{
-    return Inertia.Render("About");
-}
+app.MapInertia("/about", "About");
 ```
 
 </CodeGroup>
@@ -55,27 +51,29 @@ class UsersController extends Controller
 ```
 
 ```csharp .NET icon="dotnet"
-public class UsersController : Controller
+public class UsersController(AppDbContext context) : Controller
 {
-    private readonly AppDbContext _context;
-
-    public UsersController(AppDbContext context)
-    {
-        _context = context;
-    }
-
+    [HttpGet("/users")]
     public IActionResult Index()
     {
-        return Inertia.Render("Users/Index", new {
-            Users = _context.Users.Select(u => new {
+        return Inertia.Render("Users/Index", new
+        {
+            Users = context.Users.Select(u => new
+            {
                 u.Id,
                 u.Name,
                 u.Email,
-                EditUrl = Url.Action("Edit", "Users", new { id = u.Id }),
+                EditUrl = Url.Action(nameof(Edit), new { id = u.Id }),
             }).ToList(),
-            CreateUrl = Url.Action("Create", "Users"),
+            CreateUrl = Url.Action(nameof(Create)),
         });
     }
+
+    [HttpGet("/users/create")]
+    public IActionResult Create() => Inertia.Render("Users/Create");
+
+    [HttpGet("/users/{id:int}/edit")]
+    public IActionResult Edit(int id) => Inertia.Render("Users/Edit", new { Id = id });
 }
 ```
 
@@ -124,14 +122,11 @@ class HandleInertiaRequests extends Middleware
 ```
 
 ```csharp .NET icon="dotnet"
-// In Program.cs, configure the URL resolver
-builder.Services.AddInertia(options =>
+// In your HandleInertiaRequests middleware (or Program.cs), register a custom resolver.
+Inertia.ResolveUrlUsing(actionContext =>
 {
-    options.ResolveUrl = (context) =>
-    {
-        // Return the URL for the request...
-        return context.Request.Path;
-    };
+    // Return the URL for the request...
+    return actionContext.HttpContext.Request.Path;
 });
 ```
 
@@ -147,14 +142,10 @@ Inertia::resolveUrlUsing(function (Request $request) {
 ```
 
 ```csharp .NET icon="dotnet"
-// In Program.cs, configure the URL resolver
-builder.Services.AddInertia(options =>
+Inertia.ResolveUrlUsing(actionContext =>
 {
-    options.ResolveUrl = (context) =>
-    {
-        // Return the URL for the request...
-        return context.Request.Path;
-    };
+    // Return the URL for the request...
+    return actionContext.HttpContext.Request.Path;
 });
 ```
 
