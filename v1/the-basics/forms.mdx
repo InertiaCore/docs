@@ -188,10 +188,13 @@ public class UsersController : Controller
     }
 
     [HttpPost]
-    public IActionResult Store([FromForm] UserModel model)
+    public IActionResult Store([FromBody] UserModel model)
     {
         if (!ModelState.IsValid)
-            return Inertia.Back();
+        {
+            // Validation errors are forwarded to the response automatically.
+            return Index();
+        }
 
         _context.Users.Add(new User {
             FirstName = model.FirstName,
