@@ -103,9 +103,21 @@ import { Link } from '@inertiajs/svelte'
 
 You may preserve the fragment by chaining the `preserveFragment` method on the redirect response. The client will carry over the `#section` fragment to the redirect target, resulting in `/article/new-slug#section`.
 
-```php
+<CodeGroup>
+
+```php Laravel icon="laravel"
 return redirect('/article/new-slug')->preserveFragment();
 ```
+
+```csharp .NET icon="dotnet"
+// Call Inertia.PreserveFragment() before returning the redirect — the
+// middleware attaches the X-Inertia-Preserve-Fragment header so the
+// client carries the current URL fragment over to the redirect target.
+Inertia.PreserveFragment();
+return Redirect("/article/new-slug");
+```
+
+</CodeGroup>
 
 ## External Redirects
 
