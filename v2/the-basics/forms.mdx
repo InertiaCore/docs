@@ -2465,11 +2465,12 @@ public class UsersController : Controller
     }
 
     [HttpPost]
-    public async Task<IActionResult> Store(CreateUserRequest request)
+    public async Task<IActionResult> Store([FromBody] CreateUserRequest request)
     {
         if (!ModelState.IsValid)
         {
-            return RedirectToAction("Index");
+            // Validation errors are forwarded to the response automatically.
+            return Index();
         }
 
         _context.Users.Add(new User {
