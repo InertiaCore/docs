@@ -227,8 +227,11 @@ return Inertia::render('Dashboard', [
 
 ```csharp .NET icon="dotnet"
 return Inertia.Render("Dashboard", new {
+    // InertiaCore exposes Defer and Once as separate prop types; pick one.
+    // Use Inertia.Defer for a post-render fetch:
     Stats = Inertia.Defer(() => Stats.Generate()),
-    // Chain .Once() if supported by InertiaCore
+    // ...or Inertia.Once to resolve exactly once and remember the value client-side:
+    // Stats = Inertia.Once(() => Stats.Generate()),
 });
 ```
 
