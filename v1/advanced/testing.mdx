@@ -58,7 +58,7 @@ $this->get('/podcasts/41')
 ```
 
 ```csharp .NET icon="dotnet"
-using InertiaCore;
+using InertiaCore.Testing;
 using Microsoft.AspNetCore.Mvc.Testing;
 
 public class PodcastsControllerTest : IClassFixture<WebApplicationFactory<Program>>
@@ -71,22 +71,27 @@ public class PodcastsControllerTest : IClassFixture<WebApplicationFactory<Progra
     }
 
     [Fact]
-    public async Task CanViewPodcast()
+    public async Task Test_Can_View_Podcast()
     {
-        // Make a request with the X-Inertia header to get JSON
-        var request = new HttpRequestMessage(HttpMethod.Get, "/podcasts/41");
-        request.Headers.Add("X-Inertia", "true");
-        request.Headers.Add("X-Inertia-Version", Inertia.GetVersion());
-
+        var request = InertiaRequest.Get("/podcasts/41").Build();
         var response = await _client.SendAsync(request);
-        response.EnsureSuccessStatusCode();
 
-        var json = await response.Content.ReadAsStringAsync();
-        var page = JsonSerializer.Deserialize<JsonElement>(json);
-
-        Assert.Equal("Podcasts/Show", page.GetProperty("component").GetString());
-        Assert.Equal("The Laravel Podcast",
-            page.GetProperty("props").GetProperty("podcast").GetProperty("subject").GetString());
+        response.AssertInertia(page => page
+            .Component("Podcasts/Show")
+            .Has("podcast")
+            .Where("podcast.id", podcast.Id)
+            .Where("podcast.subject", "The Laravel Podcast")
+            .Where("podcast.description", "The Laravel Podcast brings you Laravel and PHP development news and discussion.")
+            .Count("podcast.seasons", 4)
+            .Count("podcast.seasons.4.episodes", 21)
+            .Where("podcast.host.id", 1)
+            .Where("podcast.host.name", "Matt Stauffer")
+            .Count("podcast.subscribers", 7)
+            .Where("podcast.subscribers.0.id", 2)
+            .Where("podcast.subscribers.0.name", "Claudio Dekker")
+            .Where("podcast.subscribers.0.platform", "Apple Podcasts")
+            .Missing("podcast.subscribers.0.email")
+            .Missing("podcast.subscribers.0.password"));
     }
 }
 ```
@@ -109,11 +114,11 @@ $response->assertInertia(fn (Assert $page) => $page
 ```
 
 ```csharp .NET icon="dotnet"
-// Assert the JSON response contains the expected properties
-var props = page.GetProperty("props");
-
-Assert.True(props.TryGetProperty("podcast", out _));
-Assert.True(props.GetProperty("podcast").TryGetProperty("id", out _));
+response.AssertInertia(page => page
+    // Checking a root-level prop...
+    .Has("podcast")
+    // Checking nested props using "dot" notation...
+    .Has("podcast.id"));
 ```
 
 </CodeGroup>
@@ -132,14 +137,11 @@ $response->assertInertia(fn (Assert $page) => $page
 ```
 
 ```csharp .NET icon="dotnet"
-var props = page.GetProperty("props");
-
-// Checking if a root-level property has 7 items...
-Assert.Equal(7, props.GetProperty("podcasts").GetArrayLength());
-
-// Checking nested properties...
-Assert.Equal(7, props.GetProperty("podcast")
-    .GetProperty("subscribers").GetArrayLength());
+response.AssertInertia(page => page
+    // Checking if a root-level prop has 7 items...
+    .Count("podcasts", 7)
+    // Checking nested props using "dot" notation...
+    .Count("podcast.subscribers", 7));
 ```
 
 </CodeGroup>
@@ -168,16 +170,15 @@ $response->assertInertia(fn (Assert $page) => $page
 ```
 
 ```csharp .NET icon="dotnet"
-var props = page.GetProperty("props");
-var message = props.GetProperty("message");
-
-Assert.True(message.TryGetProperty("subject", out _));
-Assert.Equal(5, message.GetProperty("comments").GetArrayLength());
-
-var firstComment = message.GetProperty("comments")[0];
-Assert.True(firstComment.TryGetProperty("body", out _));
-Assert.Equal(1, firstComment.GetProperty("files").GetArrayLength());
-Assert.True(firstComment.GetProperty("files")[0].TryGetProperty("url", out _));
+// AssertablePage uses flat dot-notation paths rather than nested scopes.
+response.AssertInertia(page => page
+    .Has("message")
+    .Has("message.subject")
+    .Count("message.comments", 5)
+    // Drill deeper with dot-notation including array indexes...
+    .Has("message.comments.0.body")
+    .Count("message.comments.0.files", 1)
+    .Has("message.comments.0.files.0.url"));
 ```
 
 </CodeGroup>
@@ -197,11 +198,10 @@ $response->assertInertia(fn (Assert $page) => $page
 ```
 
 ```csharp .NET icon="dotnet"
-var comments = props.GetProperty("comments");
-
-// Assert that there are 5 comments and inspect the first one...
-Assert.Equal(5, comments.GetArrayLength());
-Assert.True(comments[0].TryGetProperty("body", out _));
+response.AssertInertia(page => page
+    // Assert that there are 5 comments and inspect the first one...
+    .Count("comments", 5)
+    .Has("comments.0.body"));
 ```
 
 </CodeGroup>
@@ -222,17 +222,11 @@ $response->assertInertia(fn (Assert $page) => $page
 ```
 
 ```csharp .NET icon="dotnet"
-var message = props.GetProperty("message");
-
-// Assert that the subject prop matches the given message...
-Assert.Equal("This is an example message",
-    message.GetProperty("subject").GetString());
-
-// Assert against deeply nested values...
-Assert.Equal("example-attachment.pdf",
-    message.GetProperty("comments")[0]
-        .GetProperty("files")[0]
-        .GetProperty("name").GetString());
+response.AssertInertia(page => page
+    // Assert that the subject prop matches the given message...
+    .Where("message.subject", "This is an example message")
+    // Or, assert against deeply nested values...
+    .Where("message.comments.0.files.0.name", "example-attachment.pdf"));
 ```
 
 </CodeGroup>
@@ -252,11 +246,11 @@ $response->assertInertia(fn (Assert $page) => $page
 ```
 
 ```csharp .NET icon="dotnet"
-var message = props.GetProperty("message");
-
-// Assert only specific properties exist, ignoring others
-Assert.True(message.TryGetProperty("subject", out _));
-Assert.True(message.TryGetProperty("comments", out _));
+// AssertablePage does not enforce interaction, so an equivalent of etc()
+// is not required — simply assert only the keys you care about.
+response.AssertInertia(page => page
+    .Has("message.subject")
+    .Has("message.comments"));
 ```
 
 </CodeGroup>
@@ -276,10 +270,9 @@ $response->assertInertia(fn (Assert $page) => $page
 ```
 
 ```csharp .NET icon="dotnet"
-var message = props.GetProperty("message");
-
-Assert.True(message.TryGetProperty("subject", out _));
-Assert.False(message.TryGetProperty("published_at", out _));
+response.AssertInertia(page => page
+    .Has("message.subject")
+    .Missing("message.published_at"));
 ```
 
 </CodeGroup>
