@@ -66,67 +66,28 @@ use Inertia\Inertia;
 ```csharp .NET icon="dotnet"
 using InertiaCore;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.Abstractions;
-using Microsoft.AspNetCore.Routing;
 
-public class ExceptionMiddleware
+// Program.cs
+if (!app.Environment.IsDevelopment())
 {
-    private readonly RequestDelegate _next;
-    private readonly IWebHostEnvironment _env;
-
-    public ExceptionMiddleware(
-        RequestDelegate next,
-        IWebHostEnvironment env)
-    {
-        _next = next;
-        _env = env;
-    }
-
-    public async Task InvokeAsync(HttpContext context)
-    {
-        try
-        {
-            await _next(context);
-
-            if (context.Response.StatusCode == 404
-                && !context.Response.HasStarted)
-            {
-                context.Response.StatusCode = 404;
-                var result = Inertia.Render("ErrorPage",
-                    new { Status = 404 });
-                await result.ExecuteResultAsync(
-                    GetActionContext(context));
-            }
-        }
-        catch (Exception ex)
-        {
-            if (!_env.IsDevelopment())
-            {
-                context.Response.StatusCode = 500;
-                var result = Inertia.Render("ErrorPage",
-                    new { Status = 500 });
-                await result.ExecuteResultAsync(
-                    GetActionContext(context));
-            }
-            else
-            {
-                throw;
-            }
-        }
-    }
-
-    private static ActionContext GetActionContext(
-        HttpContext context)
-    {
-        var routeData = context.GetRouteData()
-            ?? new RouteData();
-        return new ActionContext(context, routeData,
-            new ActionDescriptor());
-    }
+    app.UseExceptionHandler("/Error/500");
+    app.UseStatusCodePagesWithReExecute("/Error/{0}");
 }
 
-// Register in Program.cs:
-// app.UseMiddleware<ExceptionMiddleware>();
+public class ErrorController : Controller
+{
+    [Route("Error/{statusCode:int}")]
+    public IActionResult Handle(int statusCode)
+    {
+        if (new[] { 500, 503, 404, 403 }.Contains(statusCode))
+        {
+            HttpContext.Response.StatusCode = statusCode;
+            return Inertia.Render("ErrorPage", new { Status = statusCode });
+        }
+
+        return StatusCode(statusCode);
+    }
+}
 ```
 
 </CodeGroup>
