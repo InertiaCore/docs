@@ -117,13 +117,24 @@ If you attempt to render a page that does not exist, the response will typically
 
 Sometimes you may wish to transform component names. This may be done on the client side using the [`pages.transform`](/v3/installation/client-side-setup#pages-shorthand) option, or on the server using the `Inertia::transformComponentUsing()` method. The transformed name is sent to the browser and used for `ensure_pages_exist` checks.
 
-```php
+<CodeGroup>
+
+```php Laravel icon="laravel"
 use Inertia\Inertia;
 
 Inertia::transformComponentUsing(function (string $name): string {
     return "{$name}/Page";
 });
 ```
+
+```csharp .NET icon="dotnet"
+using InertiaCore;
+
+// Program.cs — register once at startup
+Inertia.TransformComponentUsing(name => $"{name}/Page");
+```
+
+</CodeGroup>
 
 ## Layouts
 
