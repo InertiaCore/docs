@@ -21,13 +21,10 @@ Route::inertia('/about', 'About');
 ```
 
 ```csharp .NET icon="dotnet"
-using InertiaCore;
+using InertiaCore.Extensions;
 
-// In your controller
-public IActionResult About()
-{
-    return Inertia.Render("About");
-}
+// In Program.cs, register a controller-less Inertia endpoint
+app.MapInertia("/about", "About");
 ```
 
 </CodeGroup>
