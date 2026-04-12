@@ -73,6 +73,9 @@ Inertia::merge($items)->prepend();
 ```csharp .NET icon="dotnet"
 // Append at root level (default)...
 Inertia.Merge(items);
+
+// Prepend at root level...
+((Mergeable)Inertia.Merge(items)).Prepend();
 ```
 
 </CodeGroup>
@@ -90,11 +93,11 @@ Inertia::merge($chatData)->prepend('messages');
 ```
 
 ```csharp .NET icon="dotnet"
-// Merge paginated data...
-Inertia.Merge(_context.Users.Paginate(Request));
+// Only append to the 'data' array, replace everything else...
+((Mergeable)Inertia.Merge(_context.Users.Paginate(Request))).AppendAt("data");
 
-// Merge chat data...
-Inertia.Merge(chatData);
+// Prepend to the 'messages' array...
+((Mergeable)Inertia.Merge(chatData)).PrependAt("messages");
 ```
 
 </CodeGroup>
@@ -114,11 +117,14 @@ Inertia::merge($dashboardData)
 ```
 
 ```csharp .NET icon="dotnet"
-// Merge forum data...
-Inertia.Merge(forumData);
+((Mergeable)Inertia.Merge(forumData))
+    .AppendAt("posts")
+    .PrependAt("announcements");
 
-// Merge dashboard data...
-Inertia.Merge(dashboardData);
+// Target multiple properties...
+((Mergeable)Inertia.Merge(dashboardData))
+    .AppendAt("notifications")
+    .AppendAt("activities");
 ```
 
 </CodeGroup>
@@ -143,11 +149,13 @@ Inertia::merge($complexData)->append([
 ```
 
 ```csharp .NET icon="dotnet"
-// Merge post data...
-Inertia.Merge(postData);
+// Match posts by ID, update existing ones...
+((Mergeable)Inertia.Merge(postData)).AppendAt("data", matchOnKey: "id");
 
-// Merge complex data...
-Inertia.Merge(complexData);
+// Multiple properties with different match fields...
+((Mergeable)Inertia.Merge(complexData))
+    .AppendAt("users.data", matchOnKey: "id")
+    .AppendAt("messages", matchOnKey: "uuid");
 ```
 
 </CodeGroup>
@@ -191,7 +199,7 @@ public IActionResult Chat()
 
     return Inertia.Render("Chat", new
     {
-        Chat = Inertia.DeepMerge(chatData)
+        Chat = ((Mergeable)Inertia.DeepMerge(chatData)).MatchesOn("messages.id")
     });
 }
 ```
@@ -250,6 +258,8 @@ return Inertia::render('Users/Index', [
 ```
 
 ```csharp .NET icon="dotnet"
+// Chaining .Once() onto a merge prop is proposed for InertiaCore v2;
+// track feature/v2/merge-props.
 return Inertia.Render("Users/Index", new
 {
     Activity = Inertia.Merge(() => user.RecentActivity())
