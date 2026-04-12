@@ -35,18 +35,20 @@ class HandleInertiaRequests extends Middleware
 ```
 
 ```csharp .NET icon="dotnet"
-// In Program.cs or a middleware
 using InertiaCore;
 
-// Synchronously...
-Inertia.Share("appName", app.Configuration["AppName"]);
+// Register shared data once at startup...
+Inertia.Share("appName", builder.Configuration["AppName"]);
 
-// Lazily...
-Inertia.Share("auth.user", () => {
-    var user = httpContext.User;
-    return user.Identity?.IsAuthenticated == true
-        ? new { Id = user.FindFirst("sub")?.Value, Name = user.Identity.Name }
-        : null;
+// ...or resolve per-request inside middleware, using Inertia.Lazy
+// so the value is only evaluated when needed.
+app.Use(async (context, next) =>
+{
+    Inertia.Share("auth.user", Inertia.Lazy(() => context.User.Identity?.IsAuthenticated == true
+        ? new { Name = context.User.Identity.Name }
+        : null));
+
+    await next();
 });
 ```
 
@@ -73,14 +75,12 @@ Inertia::share('user', fn (Request $request) => $request->user()
 using InertiaCore;
 
 // Synchronously...
-Inertia.Share("appName", app.Configuration["AppName"]);
+Inertia.Share("appName", "My App");
 
-// Lazily...
-Inertia.Share("user", () => {
-    var user = httpContext.User;
-    return user.Identity?.IsAuthenticated == true
-        ? new { Id = user.FindFirst("sub")?.Value, Name = user.Identity.Name }
-        : null;
+// Using a dictionary...
+Inertia.Share(new Dictionary<string, object?> {
+    ["appName"] = "My App",
+    ["user"] = currentUser,
 });
 ```
 
@@ -136,8 +136,8 @@ class HandleInertiaRequests extends Middleware
 ```csharp .NET icon="dotnet"
 using InertiaCore;
 
-// In .NET, use Inertia.Share with Inertia.Once
-Inertia.Share("countries", Inertia.Once(() => _context.Countries.ToList()));
+// In .NET, call Inertia.ShareOnce to register a once prop by key.
+Inertia.ShareOnce("countries", () => _context.Countries.ToList());
 ```
 
 </CodeGroup>
@@ -151,7 +151,7 @@ Inertia::shareOnce('countries', fn () => Country::all());
 ```
 
 ```csharp .NET icon="dotnet"
-Inertia.Share("countries", Inertia.Once(() => _context.Countries.ToList()));
+Inertia.ShareOnce("countries", () => _context.Countries.ToList());
 ```
 
 </CodeGroup>
