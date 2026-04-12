@@ -22,23 +22,44 @@ If you'd like to enable history encryption globally, set the `inertia.history.en
 
 You are able to opt out of encryption on specific pages by calling the `Inertia::encryptHistory()`method before returning the response.
 
-```php
+<CodeGroup>
+
+```php Laravel icon="laravel"
 Inertia::encryptHistory(false);
 ```
+
+```csharp .NET icon="dotnet"
+// Enable globally via InertiaOptions in Program.cs:
+//   builder.Services.AddInertia(options => options.EncryptHistory = true);
+// Then opt a specific action out by passing false before returning a response.
+Inertia.EncryptHistory(false);
+```
+
+</CodeGroup>
 
 ### Per-request Encryption
 
 To encrypt the history of an individual request, simply call the `Inertia::encryptHistory()` method before returning the response.
 
-```php
+<CodeGroup>
+
+```php Laravel icon="laravel"
 Inertia::encryptHistory();
 ```
+
+```csharp .NET icon="dotnet"
+Inertia.EncryptHistory();
+```
+
+</CodeGroup>
 
 ### Encrypt Middleware
 
 To encrypt a group of routes, you may use Inertia's included `EncryptHistory` middleware.
 
-```php
+<CodeGroup>
+
+```php Laravel icon="laravel"
 Route::middleware([Inertia\Middleware\EncryptHistory::class])->get('/', function() {
     //
 });
@@ -48,13 +69,43 @@ Route::middleware(['inertia::encrypt'])->get('/', function() {
 });
 ```
 
+```csharp .NET icon="dotnet"
+using InertiaCore;
+using InertiaCore.Utils;
+
+// Enable globally on the whole pipeline:
+app.UseInertiaEncryptHistory();
+
+// Or scope the built-in EncryptHistoryMiddleware to a branch of routes:
+app.UseWhen(
+    ctx => ctx.Request.Path.StartsWithSegments("/admin"),
+    branch => branch.UseMiddleware<EncryptHistoryMiddleware>());
+
+// Or apply the [EncryptHistory] attribute to a controller or action:
+[EncryptHistory]
+public class AdminController : Controller
+{
+    public IActionResult Index() => Inertia.Render("Admin/Index");
+}
+```
+
+</CodeGroup>
+
 ## Clearing History
 
 To clear the history state, you can call the `Inertia::clearHistory()` method before returning the response.
 
-```php
+<CodeGroup>
+
+```php Laravel icon="laravel"
 Inertia::clearHistory();
 ```
+
+```csharp .NET icon="dotnet"
+Inertia.ClearHistory();
+```
+
+</CodeGroup>
 
 Once the response has rendered on the client, the encryption key will be rotated, rendering the previous history state unreadable.
 
