@@ -173,8 +173,8 @@ return Inertia::render('Users/Index', [
 
 ```csharp .NET icon="dotnet"
 return Inertia.Render("Users/Index", new {
-    Users = (Func<object?>)(() => _context.Users.ToList()),
-    Companies = (Func<object?>)(() => _context.Companies.ToList()),
+    Users = Inertia.Lazy(() => _context.Users.ToList()),
+    Companies = Inertia.Lazy(() => _context.Companies.ToList()),
 });
 ```
 
@@ -253,11 +253,6 @@ return Inertia.Render("Users/Index", new {
     // ALWAYS evaluated
     Users = _context.Users.ToList(),
 
-    // ALWAYS included on standard visits
-    // OPTIONALLY included on partial reloads
-    // ONLY evaluated when needed
-    Users = (Func<object?>)(() => _context.Users.ToList()),
-
     // NEVER included on standard visits
     // OPTIONALLY included on partial reloads
     // ONLY evaluated when needed
@@ -265,7 +260,7 @@ return Inertia.Render("Users/Index", new {
 
     // ALWAYS included on standard visits
     // ALWAYS included on partial reloads
-    // ALWAYS evaluated
+    // ONLY evaluated when needed
     Users = Inertia.Always(() => _context.Users.ToList()),
 });
 ```
