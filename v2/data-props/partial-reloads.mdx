@@ -184,7 +184,7 @@ return Inertia::render('Users/Index', [
 
 ```csharp .NET icon="dotnet"
 return Inertia.Render("Users/Index", new {
-    Users = Inertia.Always(_context.Users.ToList()),
+    Users = Inertia.Always(() => _context.Users.ToList()),
 });
 ```
 
@@ -213,8 +213,7 @@ return Inertia::render('Users/Index', [
 
 ```csharp .NET icon="dotnet"
 return Inertia.Render("Users/Index", new {
-    Users = Inertia.Optional(() => _context.Users.ToList()),
-    // Chain .Once() if supported by InertiaCore
+    Users = Inertia.Once(() => _context.Users.ToList()),
 });
 ```
 
