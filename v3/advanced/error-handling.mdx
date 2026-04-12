@@ -14,7 +14,9 @@ Inertia solves this issue by showing all non-Inertia responses in a modal. This 
 
 In production you will want to return a proper Inertia error response instead of relying on the modal-driven error reporting that is present during development. To accomplish this, you may use the `Inertia::handleExceptionsUsing()` method in your application's service provider.
 
-```php
+<CodeGroup>
+
+```php Laravel icon="laravel"
 // app/Providers/AppServiceProvider.php
 use Inertia\Inertia;
 use Inertia\ExceptionResponse;
@@ -30,6 +32,29 @@ public function boot(): void
     });
 }
 ```
+
+```csharp .NET icon="dotnet"
+// Program.cs
+using InertiaCore;
+using InertiaCore.Extensions;
+
+Inertia.HandleExceptionsUsing(response =>
+{
+    if (new[] { 403, 404, 500, 503 }.Contains(response.StatusCode()))
+    {
+        response
+            .Render("ErrorPage", new { status = response.StatusCode() })
+            .WithSharedData();
+    }
+});
+
+// Register the Inertia exception handler early in the pipeline so it can
+// intercept unhandled exceptions on Inertia requests before the response
+// body has started writing.
+app.UseInertiaExceptionHandler();
+```
+
+</CodeGroup>
 
 Since exceptions like 404s occur outside of the Inertia middleware (the request never reaches your routes), the error response won't have access to shared data or the root view by default. Calling `withSharedData()` explicitly resolves the Inertia middleware and includes your shared props in the error page.
 
@@ -138,7 +163,9 @@ export default function ErrorPage({ status }) {
 
 Under the hood, `handleExceptionsUsing()` registers a `$exceptions->respond()` callback in your application's `bootstrap/app.php` file. You may register this callback manually if you prefer.
 
-```php
+<CodeGroup>
+
+```php Laravel icon="laravel"
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Inertia\Inertia;
@@ -155,3 +182,32 @@ use Inertia\Inertia;
     });
 })
 ```
+
+```csharp .NET icon="dotnet"
+using InertiaCore;
+using Microsoft.AspNetCore.Mvc;
+
+// Program.cs
+if (!app.Environment.IsDevelopment())
+{
+    app.UseExceptionHandler("/Error/500");
+    app.UseStatusCodePagesWithReExecute("/Error/{0}");
+}
+
+public class ErrorController : Controller
+{
+    [Route("Error/{statusCode:int}")]
+    public IActionResult Handle(int statusCode)
+    {
+        if (new[] { 500, 503, 404, 403 }.Contains(statusCode))
+        {
+            HttpContext.Response.StatusCode = statusCode;
+            return Inertia.Render("ErrorPage", new { Status = statusCode });
+        }
+
+        return StatusCode(statusCode);
+    }
+}
+```
+
+</CodeGroup>
