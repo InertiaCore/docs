@@ -190,7 +190,10 @@ An explicit `component` prop always takes priority over `instant`.
 
 To include component information in your Wayfinder route definitions, enable the `generate.inertia.component` option in your `config/wayfinder.php` configuration file.
 
-```php config/wayfinder.php
+<CodeGroup>
+
+```php Laravel icon="laravel"
+// config/wayfinder.php
 return [
     'generate' => [
         'inertia' => [
@@ -199,6 +202,14 @@ return [
     ],
 ];
 ```
+
+```csharp .NET icon="dotnet"
+// Wayfinder is a Laravel-specific integration. InertiaCore has no
+// equivalent, so pass the target component name explicitly on the
+// client when performing an instant visit.
+```
+
+</CodeGroup>
 
 After enabling this option and regenerating your Wayfinder routes, each route definition will include the component name that Inertia renders for that route.
 
@@ -216,8 +227,19 @@ router.visit(show.withComponent("Dashboard/Admin"));
 
 You may disable the `sharedProps` metadata key in your `config/inertia.php` configuration file. The server will still resolve and include shared prop values in the response, but the metadata listing which keys are shared will be omitted. Without this list, the client cannot identify which props to carry over during instant visits.
 
-```php config/inertia.php
+<CodeGroup>
+
+```php Laravel icon="laravel"
+// config/inertia.php
 return [
     'expose_shared_prop_keys' => false,
 ];
 ```
+
+```csharp .NET icon="dotnet"
+// InertiaCore always emits the sharedProps metadata key in the page
+// response, so shared props are carried over during instant visits
+// with no configuration required.
+```
+
+</CodeGroup>
