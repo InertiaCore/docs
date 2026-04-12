@@ -113,10 +113,12 @@ using InertiaCore;
 
 public class UserController : Controller
 {
-    public IActionResult Show(User user)
+    public IActionResult Show(int id)
     {
+        var user = _context.Users.Find(id);
+
         return Inertia.Render("User/Show", new {
-            User = user
+            User = user,
         });
     }
 }
