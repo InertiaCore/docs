@@ -285,7 +285,10 @@ return Inertia::render('Event', ['event' => $event])
 
 ```csharp .NET icon="dotnet"
 return Inertia.Render("Event", new { Event = @event })
-    .WithViewData("meta", @event.Meta);
+    .WithViewData(new Dictionary<string, object>
+    {
+        ["meta"] = @event.Meta,
+    });
 ```
 
 </CodeGroup>
