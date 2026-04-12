@@ -59,7 +59,7 @@ class PodcastsControllerTest extends TestCase
 ```
 
 ```csharp .NET icon="dotnet"
-using System.Text.Json;
+using InertiaCore.Testing;
 using Microsoft.AspNetCore.Mvc.Testing;
 
 public class PodcastsControllerTest
@@ -76,35 +76,25 @@ public class PodcastsControllerTest
     [Fact]
     public async Task CanViewPodcast()
     {
-        var request = new HttpRequestMessage(
-            HttpMethod.Get, "/podcasts/41");
-        request.Headers.Add("X-Inertia", "true");
-        request.Headers.Add("X-Inertia-Version", "1");
-
+        var request = InertiaRequest.Get("/podcasts/41").Build();
         var response = await _client.SendAsync(request);
-        response.EnsureSuccessStatusCode();
 
-        var content = await response.Content
-            .ReadAsStringAsync();
-        var page = JsonDocument.Parse(content)
-            .RootElement;
-
-        Assert.Equal("Podcasts/Show",
-            page.GetProperty("component").GetString());
-
-        var podcast = page.GetProperty("props")
-            .GetProperty("podcast");
-        Assert.Equal("The Laravel Podcast",
-            podcast.GetProperty("subject").GetString());
-
-        var host = podcast.GetProperty("host");
-        Assert.Equal(1,
-            host.GetProperty("id").GetInt32());
-        Assert.Equal("Matt Stauffer",
-            host.GetProperty("name").GetString());
-
-        var subscribers = podcast.GetProperty("subscribers");
-        Assert.Equal(7, subscribers.GetArrayLength());
+        response.AssertInertia(page => page
+            .Component("Podcasts/Show")
+            .Has("podcast")
+            .Where("podcast.id", podcast.Id)
+            .Where("podcast.subject", "The Laravel Podcast")
+            .Where("podcast.description", "The Laravel Podcast brings you Laravel and PHP development news and discussion.")
+            .Count("podcast.seasons", 4)
+            .Count("podcast.seasons.4.episodes", 21)
+            .Where("podcast.host.id", 1)
+            .Where("podcast.host.name", "Matt Stauffer")
+            .Count("podcast.subscribers", 7)
+            .Where("podcast.subscribers.0.id", 2)
+            .Where("podcast.subscribers.0.name", "Claudio Dekker")
+            .Where("podcast.subscribers.0.platform", "Apple Podcasts")
+            .Missing("podcast.subscribers.0.email")
+            .Missing("podcast.subscribers.0.password"));
     }
 }
 ```
@@ -131,24 +121,18 @@ $response->inertiaProps('podcast.id');
 ```
 
 ```csharp .NET icon="dotnet"
-var request = new HttpRequestMessage(
-    HttpMethod.Get, "/podcasts/41");
-request.Headers.Add("X-Inertia", "true");
-request.Headers.Add("X-Inertia-Version", "1");
-
+// InertiaCore exposes props through the fluent AssertablePage
+// API rather than a dedicated prop getter. Use Has/Where with
+// dot-notation paths to walk into the response.
+var request = InertiaRequest.Get("/podcasts/41").Build();
 var response = await _client.SendAsync(request);
-var content = await response.Content.ReadAsStringAsync();
-var page = JsonDocument.Parse(content).RootElement;
 
-// Returns all props...
-var props = page.GetProperty("props");
+response.AssertInertia(page => page
+    // Check that a specific prop exists...
+    .Has("podcast")
 
-// Returns a specific prop...
-var podcast = props.GetProperty("podcast");
-
-// Returns a nested prop...
-var podcastId = props.GetProperty("podcast")
-    .GetProperty("id");
+    // Assert against a nested prop using "dot" notation...
+    .Has("podcast.id"));
 ```
 
 </CodeGroup>
@@ -168,15 +152,12 @@ $response->assertInertia(fn (Assert $page) => $page
 ```
 
 ```csharp .NET icon="dotnet"
-var props = page.GetProperty("props");
+response.AssertInertia(page => page
+    // Checking a root-level prop...
+    .Has("podcast")
 
-// Checking if a root-level property has 7 items...
-Assert.Equal(7, props.GetProperty("podcasts")
-    .GetArrayLength());
-
-// Checking nested properties...
-Assert.Equal(7, props.GetProperty("podcast")
-    .GetProperty("subscribers").GetArrayLength());
+    // Checking nested props using "dot" notation...
+    .Has("podcast.id"));
 ```
 
 </CodeGroup>
@@ -196,15 +177,12 @@ $response->assertInertia(fn (Assert $page) => $page
 ```
 
 ```csharp .NET icon="dotnet"
-var props = page.GetProperty("props");
+response.AssertInertia(page => page
+    // Checking if a root-level prop has 7 items...
+    .Count("podcasts", 7)
 
-// Checking if a root-level property has 7 items...
-Assert.Equal(7, props.GetProperty("podcasts")
-    .GetArrayLength());
-
-// Checking nested properties...
-Assert.Equal(7, props.GetProperty("podcast")
-    .GetProperty("subscribers").GetArrayLength());
+    // Checking nested props using "dot" notation...
+    .Count("podcast.subscribers", 7));
 ```
 
 </CodeGroup>
@@ -234,23 +212,16 @@ $response->assertInertia(fn (Assert $page) => $page
 ```
 
 ```csharp .NET icon="dotnet"
-var props = page.GetProperty("props");
+// AssertablePage uses flat dot-notation paths rather than nested scopes.
+response.AssertInertia(page => page
+    .Has("message")
+    .Has("message.subject")
+    .Count("message.comments", 5)
 
-// Navigating into nested properties...
-var message = props.GetProperty("message");
-
-Assert.True(message.TryGetProperty("subject",
-    out _));
-var comments = message.GetProperty("comments");
-Assert.Equal(5, comments.GetArrayLength());
-
-// Scoping into the first comment...
-var firstComment = comments[0];
-Assert.True(firstComment.TryGetProperty("body",
-    out _));
-var files = firstComment.GetProperty("files");
-Assert.Equal(1, files.GetArrayLength());
-Assert.True(files[0].TryGetProperty("url", out _));
+    // Drill deeper with dot-notation including array indexes...
+    .Has("message.comments.0.body")
+    .Count("message.comments.0.files", 1)
+    .Has("message.comments.0.files.0.url"));
 ```
 
 </CodeGroup>
@@ -270,16 +241,10 @@ $response->assertInertia(fn (Assert $page) => $page
 ```
 
 ```csharp .NET icon="dotnet"
-var props = page.GetProperty("props");
-
-// Assert that there are 5 comments and scope into
-// the first comment...
-var comments = props.GetProperty("comments");
-Assert.Equal(5, comments.GetArrayLength());
-
-var firstComment = comments[0];
-Assert.True(firstComment.TryGetProperty("body",
-    out _));
+response.AssertInertia(page => page
+    // Assert that there are 5 comments and inspect the first one...
+    .Count("comments", 5)
+    .Has("comments.0.body"));
 ```
 
 </CodeGroup>
@@ -301,18 +266,12 @@ $response->assertInertia(fn (Assert $page) => $page
 ```
 
 ```csharp .NET icon="dotnet"
-var message = props.GetProperty("message");
+response.AssertInertia(page => page
+    // Assert that the subject prop matches the given message...
+    .Where("message.subject", "This is an example message")
 
-// Assert that the subject prop matches the given
-// message...
-Assert.Equal("This is an example message",
-    message.GetProperty("subject").GetString());
-
-// Or, assert against deeply nested values...
-Assert.Equal("example-attachment.pdf",
-    message.GetProperty("comments")[0]
-        .GetProperty("files")[0]
-        .GetProperty("name").GetString());
+    // Or, assert against deeply nested values...
+    .Where("message.comments.0.files.0.name", "example-attachment.pdf"));
 ```
 
 </CodeGroup>
@@ -332,15 +291,11 @@ $response->assertInertia(fn (Assert $page) => $page
 ```
 
 ```csharp .NET icon="dotnet"
-var message = props.GetProperty("message");
-
-// Assert specific properties exist without needing
-// to assert against every property...
-Assert.True(message.TryGetProperty("subject",
-    out _));
-Assert.True(message.TryGetProperty("comments",
-    out _));
-// Other properties may exist but are not asserted
+// AssertablePage does not enforce interaction, so an equivalent of
+// etc() is not required — simply assert only the keys you care about.
+response.AssertInertia(page => page
+    .Has("message.subject")
+    .Has("message.comments"));
 ```
 
 </CodeGroup>
@@ -360,14 +315,11 @@ $response->assertInertia(fn (Assert $page) => $page
 ```
 
 ```csharp .NET icon="dotnet"
-var message = props.GetProperty("message");
+response.AssertInertia(page => page
+    .Has("message.subject")
 
-Assert.True(message.TryGetProperty("subject",
-    out _));
-
-// Assert that the property does not exist...
-Assert.False(message.TryGetProperty("published_at",
-    out _));
+    // Assert that the property does not exist...
+    .Missing("message.published_at"));
 ```
 
 </CodeGroup>
@@ -390,33 +342,27 @@ $response->assertInertia(fn (Assert $page) => $page
 ```
 
 ```csharp .NET icon="dotnet"
-// Test partial reloads by sending a follow-up
-// request with the X-Inertia-Partial-Data header
-var props = page.GetProperty("props");
-Assert.True(props.TryGetProperty("orders", out _));
-Assert.False(props.TryGetProperty("statuses",
-    out _));
+// Assert the initial response contains orders but not statuses...
+var request = InertiaRequest.Get("/orders").Build();
+var response = await _client.SendAsync(request);
 
-// Follow-up partial reload request
-var partialRequest = new HttpRequestMessage(
-    HttpMethod.Get, "/orders");
-partialRequest.Headers.Add("X-Inertia", "true");
-partialRequest.Headers.Add("X-Inertia-Version", "1");
-partialRequest.Headers.Add(
-    "X-Inertia-Partial-Data", "statuses");
-partialRequest.Headers.Add(
-    "X-Inertia-Partial-Component", "Orders/Index");
+response.AssertInertia(page => page
+    .Has("orders")
+    .Missing("statuses"));
 
-var reload = await _client.SendAsync(partialRequest);
-var reloadPage = JsonDocument.Parse(
-    await reload.Content.ReadAsStringAsync())
-    .RootElement;
-var reloadProps = reloadPage.GetProperty("props");
+// Then issue a follow-up partial reload that only requests statuses.
+// Use InertiaRequest.Partial() to set X-Inertia-Partial-Component and
+// .Only() to set X-Inertia-Partial-Data.
+var partial = InertiaRequest
+    .Partial("/orders", "Orders/Index")
+    .Only("statuses")
+    .Build();
 
-Assert.False(reloadProps.TryGetProperty("orders",
-    out _));
-Assert.Equal(5, reloadProps.GetProperty("statuses")
-    .GetArrayLength());
+var reload = await _client.SendAsync(partial);
+
+reload.AssertInertia(page => page
+    .Missing("orders")
+    .Count("statuses", 5));
 ```
 
 </CodeGroup>
@@ -442,35 +388,26 @@ $response->assertInertia(fn (Assert $page) => $page
 ```
 
 ```csharp .NET icon="dotnet"
-var props = page.GetProperty("props");
-Assert.True(props.TryGetProperty("users", out _));
-Assert.True(props.TryGetProperty("roles", out _));
-Assert.False(props.TryGetProperty("permissions",
-    out _));
+// Deferred props are absent from the initial response...
+var request = InertiaRequest.Get("/users").Build();
+var response = await _client.SendAsync(request);
 
-// Load deferred props via a partial reload request
-var deferredRequest = new HttpRequestMessage(
-    HttpMethod.Get, "/current-url");
-deferredRequest.Headers.Add("X-Inertia", "true");
-deferredRequest.Headers.Add(
-    "X-Inertia-Version", "1");
-deferredRequest.Headers.Add(
-    "X-Inertia-Partial-Data", "permissions");
-deferredRequest.Headers.Add(
-    "X-Inertia-Partial-Component", "ComponentName");
+response.AssertInertia(page => page
+    .Has("users")
+    .Has("roles")
+    .Missing("permissions"));
 
-var deferredResponse = await _client
-    .SendAsync(deferredRequest);
-var deferredPage = JsonDocument.Parse(
-    await deferredResponse.Content
-        .ReadAsStringAsync()).RootElement;
-var deferredProps = deferredPage
-    .GetProperty("props");
+// Load the deferred prop via a follow-up partial reload.
+var deferred = InertiaRequest
+    .Partial("/users", "Users/Index")
+    .Only("permissions")
+    .Build();
 
-Assert.True(deferredProps.TryGetProperty(
-    "permissions", out var permissions));
-Assert.Equal("edit users",
-    permissions[0].GetProperty("name").GetString());
+var deferredResponse = await _client.SendAsync(deferred);
+
+deferredResponse.AssertInertia(page => page
+    .Has("permissions")
+    .Where("permissions.0.name", "edit users"));
 ```
 
 </CodeGroup>
@@ -493,35 +430,27 @@ $response->assertInertia(fn (Assert $page) => $page
 ```
 
 ```csharp .NET icon="dotnet"
-var props = page.GetProperty("props");
-Assert.True(props.TryGetProperty("users", out _));
-Assert.False(props.TryGetProperty("teams", out _));
-Assert.False(props.TryGetProperty("projects",
-    out _));
+// InertiaCore does not model deferred prop "groups" directly;
+// request the specific keys belonging to the group via .Only().
+var request = InertiaRequest.Get("/users").Build();
+var response = await _client.SendAsync(request);
 
-// Load specific deferred prop group
-var deferredRequest = new HttpRequestMessage(
-    HttpMethod.Get, "/current-url");
-deferredRequest.Headers.Add("X-Inertia", "true");
-deferredRequest.Headers.Add(
-    "X-Inertia-Version", "1");
-deferredRequest.Headers.Add(
-    "X-Inertia-Partial-Data", "teams,projects");
-deferredRequest.Headers.Add(
-    "X-Inertia-Partial-Component", "ComponentName");
+response.AssertInertia(page => page
+    .Has("users")
+    .Missing("teams")
+    .Missing("projects"));
 
-var reload = await _client.SendAsync(deferredRequest);
-var reloadPage = JsonDocument.Parse(
-    await reload.Content.ReadAsStringAsync())
-    .RootElement;
-var reloadProps = reloadPage.GetProperty("props");
+var deferred = InertiaRequest
+    .Partial("/users", "Users/Index")
+    .Only("teams", "projects")
+    .Build();
 
-Assert.Equal(5, reloadProps.GetProperty("teams")
-    .GetArrayLength());
-Assert.True(reloadProps.TryGetProperty("projects",
-    out _));
-Assert.False(reloadProps.TryGetProperty(
-    "permissions", out _));
+var reload = await _client.SendAsync(deferred);
+
+reload.AssertInertia(page => page
+    .Count("teams", 5)
+    .Has("projects")
+    .Missing("permissions"));
 ```
 
 </CodeGroup>
@@ -541,30 +470,18 @@ $response->assertInertia(fn (Assert $page) => $page
 ```
 
 ```csharp .NET icon="dotnet"
-// Load multiple deferred prop groups
-var deferredRequest = new HttpRequestMessage(
-    HttpMethod.Get, "/current-url");
-deferredRequest.Headers.Add("X-Inertia", "true");
-deferredRequest.Headers.Add(
-    "X-Inertia-Version", "1");
-deferredRequest.Headers.Add(
-    "X-Inertia-Partial-Data",
-    "permissions,teams,projects");
-deferredRequest.Headers.Add(
-    "X-Inertia-Partial-Component", "ComponentName");
+// Load the keys from multiple deferred groups in a single partial reload.
+var deferred = InertiaRequest
+    .Partial("/users", "Users/Index")
+    .Only("permissions", "teams", "projects")
+    .Build();
 
-var reload = await _client.SendAsync(deferredRequest);
-var reloadPage = JsonDocument.Parse(
-    await reload.Content.ReadAsStringAsync())
-    .RootElement;
-var reloadProps = reloadPage.GetProperty("props");
+var reload = await _client.SendAsync(deferred);
 
-Assert.True(reloadProps.TryGetProperty(
-    "permissions", out _));
-Assert.True(reloadProps.TryGetProperty("teams",
-    out _));
-Assert.True(reloadProps.TryGetProperty("projects",
-    out _));
+reload.AssertInertia(page => page
+    .Has("permissions")
+    .Has("teams")
+    .Has("projects"));
 ```
 
 </CodeGroup>
@@ -592,24 +509,20 @@ $response->assertInertia(fn (Assert $page) => $page
 ```
 
 ```csharp .NET icon="dotnet"
-var props = page.GetProperty("props");
-var flash = props.GetProperty("flash");
+// InertiaCore does not ship dedicated hasFlash helpers; flash data
+// is surfaced as a shared prop, so assert against it directly.
+response.AssertInertia(page => page
+    // Assert flash data exists...
+    .Has("flash.message")
 
-// Assert flash data exists...
-Assert.True(flash.TryGetProperty("message",
-    out _));
+    // Assert flash data has a specific value...
+    .Where("flash.message", "Item saved!")
 
-// Assert flash data has a specific value...
-Assert.Equal("Item saved!",
-    flash.GetProperty("message").GetString());
+    // Nested values are supported using "dot" notation...
+    .Where("flash.notification.type", "success")
 
-// Nested values...
-Assert.Equal("success",
-    flash.GetProperty("notification")
-        .GetProperty("type").GetString());
-
-// Assert flash data does not exist...
-Assert.False(flash.TryGetProperty("error", out _));
+    // Assert flash data does not exist...
+    .Missing("flash.error"));
 ```
 
 </CodeGroup>
@@ -631,34 +544,25 @@ $response->assertRedirect('/dashboard')
 ```
 
 ```csharp .NET icon="dotnet"
-var response = await _client.PostAsync("/users",
-    new StringContent("{}"));
+// Inertia redirects return a 302 with a Location header. Follow it
+// with an Inertia XHR request, then assert against the rendered page
+// where the flash prop is exposed.
+var response = await _client.PostAsync("/users", new StringContent("{}"));
 
-// Assert redirect
-Assert.Equal(HttpStatusCode.Redirect,
-    response.StatusCode);
-Assert.Equal("/dashboard",
-    response.Headers.Location?.ToString());
+Assert.Equal(HttpStatusCode.Redirect, response.StatusCode);
+Assert.Equal("/dashboard", response.Headers.Location?.ToString());
 
-// Follow the redirect and check flash data
-// in the Inertia response
-var redirectRequest = new HttpRequestMessage(
-    HttpMethod.Get, response.Headers.Location);
-redirectRequest.Headers.Add("X-Inertia", "true");
-redirectRequest.Headers.Add(
-    "X-Inertia-Version", "1");
+var follow = InertiaRequest
+    .Get(response.Headers.Location!.ToString())
+    .Build();
 
-var redirectResponse = await _client
-    .SendAsync(redirectRequest);
-var page = JsonDocument.Parse(
-    await redirectResponse.Content
-        .ReadAsStringAsync()).RootElement;
-var flash = page.GetProperty("props")
-    .GetProperty("flash");
+var redirectResponse = await _client.SendAsync(follow);
 
-Assert.Equal("User created!",
-    flash.GetProperty("message").GetString());
-Assert.False(flash.TryGetProperty("error", out _));
+redirectResponse.AssertInertia(page => page
+    .Has("flash.message")
+    .Where("flash.message", "User created!")
+    .Where("flash.notification.type", "success")
+    .Missing("flash.error"));
 ```
 
 </CodeGroup>
