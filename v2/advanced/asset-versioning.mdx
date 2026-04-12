@@ -27,14 +27,16 @@ class HandleInertiaRequests extends Middleware
 ```
 
 ```csharp .NET icon="dotnet"
-using InertiaCore;
 using InertiaCore.Extensions;
 
-// In Program.cs, configure the asset version:
-builder.Services.AddInertia(options =>
-{
-    options.VersionHash = Vite.GetManifestHash("wwwroot/build");
-});
+// In Program.cs. AddViteHelper() + UseInertia() auto-wires
+// Inertia.Version(Vite.GetManifestHash) from your Vite manifest.
+builder.Services.AddInertia();
+builder.Services.AddViteHelper();
+
+var app = builder.Build();
+
+app.UseInertia();
 ```
 
 </CodeGroup>
@@ -92,19 +94,13 @@ class HandleInertiaRequests extends Middleware
 
 ```csharp .NET icon="dotnet"
 using InertiaCore;
-using InertiaCore.Extensions;
+using InertiaCore.Utils;
 
-// In Program.cs, disable automatic versioning
-// and share the version as a prop instead:
-var assetVersion = Vite.GetManifestHash("wwwroot/build");
+// Pin a fixed version to disable automatic asset-driven reloads,
+// then expose the real asset version as shared data.
+Inertia.Version("1.0.0");
 
-builder.Services.AddInertia(options =>
-{
-    options.VersionHash = null;
-});
-
-// Then in your middleware, share the version:
-Inertia.Share("version", assetVersion);
+Inertia.Share("version", Vite.GetManifestHash());
 ```
 
 </CodeGroup>
