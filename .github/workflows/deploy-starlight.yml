@@ -2,7 +2,7 @@ name: Deploy Starlight docs to Cloudflare
 
 on:
   push:
-    branches: [3.x]
+    branches: [main]
     # Only run when something the build actually consumes changes —
     # avoids re-deploying when the legacy docusaurus tree or unrelated
     # repo files are touched.
