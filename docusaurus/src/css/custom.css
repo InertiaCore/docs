@@ -39,6 +39,11 @@ strong {
   font-weight: 500 !important;
 }
 
+/* Underline hyperlinks inside article content */
+article .markdown a:not(.card):not(.button) {
+  text-decoration: underline;
+}
+
 /* Lay out the h1 and the "Open Markdown" dropdown on one row */
 article .markdown > header:has(.markdown-actions-container) {
   display: flex;

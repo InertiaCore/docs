@@ -228,7 +228,18 @@ const config = {
               },
             ],
           },
+          {
+            title: "Inertia.js",
+            items: [
+              {
+                label: "Official Inertia.js Site",
+                href: "https://inertiajs.com",
+              },
+            ],
+          },
         ],
+        copyright:
+          "InertiaCore is an unofficial, third-party adapter for Inertia.js. Not affiliated with or endorsed by the Inertia.js team.",
       },
       colorMode: {
         defaultMode: "light",
