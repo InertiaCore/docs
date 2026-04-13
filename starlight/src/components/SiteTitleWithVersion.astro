@@ -1,0 +1,82 @@
+---
+import Default from "@astrojs/starlight/components/SiteTitle.astro";
+
+// Detect current version from the URL. Fall back to "v3" when the reader
+// isn't on a versioned page (e.g. the landing page).
+const match = Astro.url.pathname.match(/\/docs\/(v[0-9]+(?:\.[0-9]+)?)\b/);
+const currentVersion = match?.[1] ?? "v3";
+
+const versions = [
+  { slug: "v3", label: "v3.x" },
+  { slug: "v2", label: "v2.x" },
+  { slug: "v1", label: "v1.x" },
+];
+const currentLabel =
+  versions.find((v) => v.slug === currentVersion)?.label ?? "v3.x";
+---
+
+<div class="site-title-wrap">
+  <Default><slot /></Default>
+  <div class="version-switcher">
+    <button
+      type="button"
+      class="version-switcher__button"
+      aria-haspopup="listbox"
+      aria-expanded="false"
+      data-version-button
+    >
+      <span>{currentLabel}</span>
+      <svg
+        width="10"
+        height="10"
+        viewBox="0 0 16 16"
+        aria-hidden="true"
+        fill="currentColor"
+      >
+        <path d="M4.427 6.427l3.396 3.396a.25.25 0 00.354 0l3.396-3.396A.25.25 0 0011.396 6H4.604a.25.25 0 00-.177.427z"></path>
+      </svg>
+    </button>
+    <ul class="version-switcher__menu" role="listbox" data-version-menu hidden>
+      {
+        versions.map((v) => (
+          <li>
+            <a
+              href={`/docs/${v.slug}/getting-started/`}
+              class={`version-switcher__item ${v.slug === currentVersion ? "version-switcher__item--active" : ""}`}
+            >
+              {v.label}
+            </a>
+          </li>
+        ))
+      }
+    </ul>
+  </div>
+</div>
+
+<script>
+  // The Starlight header clips overflow, so position the menu with
+  // `position: fixed` and compute top/left from the button's bounding rect.
+  const btn = document.querySelector<HTMLButtonElement>("[data-version-button]");
+  const menu = document.querySelector<HTMLElement>("[data-version-menu]");
+  if (btn && menu) {
+    const place = () => {
+      const rect = btn.getBoundingClientRect();
+      menu.style.top = `${rect.bottom + 4}px`;
+      menu.style.left = `${rect.left}px`;
+    };
+    const toggle = (open: boolean) => {
+      if (open) place();
+      menu.hidden = !open;
+      btn.setAttribute("aria-expanded", String(open));
+    };
+    btn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      toggle(menu.hidden);
+    });
+    document.addEventListener("click", (e) => {
+      if (!menu.contains(e.target as Node) && e.target !== btn) toggle(false);
+    });
+    window.addEventListener("scroll", () => toggle(false), { passive: true });
+    window.addEventListener("resize", () => toggle(false));
+  }
+</script>

@@ -1,0 +1,23 @@
+---
+import Default from "@astrojs/starlight/components/Sidebar.astro";
+
+// Config-side the sidebar has three top-level groups: "v3.x", "v2.x",
+// "v1.x". Here we trim that down to just the group matching the current
+// URL, and flatten it so the version label doesn't render as an extra
+// hierarchy level — the header dropdown is the single source of truth
+// for version switching.
+
+const match = Astro.url.pathname.match(/\/docs\/(v\d+)\b/);
+const current = match?.[1] ?? "v3";
+const wantedLabel = { v1: "v1.x", v2: "v2.x", v3: "v3.x" }[current];
+
+const route = Astro.locals.starlightRoute;
+const group = route.sidebar.find(
+  (entry) => entry.type === "group" && entry.label === wantedLabel,
+);
+if (group && group.type === "group") {
+  route.sidebar = group.entries;
+}
+---
+
+<Default><slot /></Default>

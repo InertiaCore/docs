@@ -1,0 +1,178 @@
+---
+// Mirror of @astrojs/starlight/components/Search.astro with one change:
+// when the user is on a versioned docs page (/docs/v1, /docs/v2, /docs/v3),
+// the PagefindUI instance is initialized with a silent `mergeFilter` so
+// search results are scoped to that version's content. Pages also emit a
+// `data-pagefind-filter="version:vN"` attribute (see
+// PageTitleWithMarkdownActions.astro) for the index to match against.
+import { Icon } from "@astrojs/starlight/components";
+import project from "virtual:starlight/project-context";
+
+const pagefindTranslations = {
+  placeholder: Astro.locals.t("search.label"),
+  ...Object.fromEntries(
+    Object.entries(Astro.locals.t.all())
+      .filter(([key]) => key.startsWith("pagefind."))
+      .map(([key, value]) => [key.replace("pagefind.", ""), value]),
+  ),
+};
+
+const dataAttributes: DOMStringMap = {
+  "data-translations": JSON.stringify(pagefindTranslations),
+};
+if (project.trailingSlash === "never") {
+  dataAttributes["data-strip-trailing-slash"] = "";
+}
+---
+
+<site-search class={Astro.props.class} {...dataAttributes}>
+  <button
+    data-open-modal
+    disabled
+    aria-label={Astro.locals.t("search.label")}
+    aria-keyshortcuts="Control+K"
+  >
+    <Icon name="magnifier" />
+    <span class="sl-hidden md:sl-block" aria-hidden="true">
+      {Astro.locals.t("search.label")}
+    </span>
+    <kbd class="sl-hidden md:sl-flex" style="display: none;">
+      <kbd>{Astro.locals.t("search.ctrlKey")}</kbd><kbd>K</kbd>
+    </kbd>
+  </button>
+
+  <dialog style="padding:0" aria-label={Astro.locals.t("search.label")}>
+    <div class="dialog-frame sl-flex">
+      <button data-close-modal class="sl-flex md:sl-hidden">
+        {Astro.locals.t("search.cancelLabel")}
+      </button>
+      {
+        import.meta.env.DEV ? (
+          <div style="margin: auto; text-align: center; white-space: pre-line;" dir="ltr">
+            <p>{Astro.locals.t("search.devWarning")}</p>
+          </div>
+        ) : (
+          <div class="search-container">
+            <div id="starlight__search" />
+          </div>
+        )
+      }
+    </div>
+  </dialog>
+</site-search>
+
+<script is:inline>
+  (() => {
+    const openBtn = document.querySelector("button[data-open-modal]");
+    const shortcut = openBtn?.querySelector("kbd");
+    if (!openBtn || !(shortcut instanceof HTMLElement)) return;
+    const platformKey = shortcut.querySelector("kbd");
+    if (platformKey && /(Mac|iPhone|iPod|iPad)/i.test(navigator.platform)) {
+      platformKey.textContent = "⌘";
+      openBtn.setAttribute("aria-keyshortcuts", "Meta+K");
+    }
+    shortcut.style.display = "";
+  })();
+</script>
+
+<script>
+  import { pagefindUserConfig } from "virtual:starlight/pagefind-config";
+
+  class SiteSearch extends HTMLElement {
+    constructor() {
+      super();
+      const openBtn = this.querySelector<HTMLButtonElement>("button[data-open-modal]")!;
+      const closeBtn = this.querySelector<HTMLButtonElement>("button[data-close-modal]")!;
+      const dialog = this.querySelector("dialog")!;
+      const dialogFrame = this.querySelector(".dialog-frame")!;
+
+      const onClick = (event: MouseEvent) => {
+        const isLink = "href" in (event.target || {});
+        if (
+          isLink ||
+          (document.body.contains(event.target as Node) &&
+            !dialogFrame.contains(event.target as Node))
+        ) {
+          closeModal();
+        }
+      };
+
+      const openModal = (event?: MouseEvent) => {
+        dialog.showModal();
+        document.body.toggleAttribute("data-search-modal-open", true);
+        this.querySelector("input")?.focus();
+        event?.stopPropagation();
+        window.addEventListener("click", onClick);
+      };
+
+      const closeModal = () => dialog.close();
+
+      openBtn.addEventListener("click", openModal);
+      openBtn.disabled = false;
+      closeBtn.addEventListener("click", closeModal);
+
+      dialog.addEventListener("close", () => {
+        document.body.toggleAttribute("data-search-modal-open", false);
+        window.removeEventListener("click", onClick);
+      });
+
+      window.addEventListener("keydown", (e) => {
+        if ((e.metaKey === true || e.ctrlKey === true) && e.key === "k") {
+          dialog.open ? closeModal() : openModal();
+          e.preventDefault();
+        }
+      });
+
+      let translations = {};
+      try {
+        translations = JSON.parse(this.dataset.translations || "{}");
+      } catch {}
+
+      const shouldStrip = this.dataset.stripTrailingSlash !== undefined;
+      const stripTrailingSlash = (path: string) =>
+        path.replace(/(.)\/(#.*)?$/, "$1$2");
+      const formatURL = shouldStrip ? stripTrailingSlash : (path: string) => path;
+
+      // Detect current version from URL. When set, all queries silently
+      // include `version:vN` so results are scoped to the user's docs
+      // version. Falls back to no filter on /docs/ landing or anywhere
+      // else.
+      const versionMatch = window.location.pathname.match(/^\/docs\/(v\d+)\//);
+      const currentVersion = versionMatch?.[1];
+      const mergeFilter = currentVersion
+        ? { version: currentVersion }
+        : undefined;
+
+      window.addEventListener("DOMContentLoaded", () => {
+        if (import.meta.env.DEV) return;
+        const onIdle = window.requestIdleCallback || ((cb) => setTimeout(cb, 1));
+        onIdle(async () => {
+          // @ts-expect-error — Missing types for @pagefind/default-ui package.
+          const { PagefindUI } = await import("@pagefind/default-ui");
+          new PagefindUI({
+            ...pagefindUserConfig,
+            element: "#starlight__search",
+            baseUrl: import.meta.env.BASE_URL,
+            bundlePath:
+              import.meta.env.BASE_URL.replace(/\/$/, "") + "/pagefind/",
+            showImages: false,
+            translations,
+            showSubResults: true,
+            mergeFilter,
+            processResult: (result: {
+              url: string;
+              sub_results: Array<{ url: string }>;
+            }) => {
+              result.url = formatURL(result.url);
+              result.sub_results = result.sub_results.map((sub_result) => {
+                sub_result.url = formatURL(sub_result.url);
+                return sub_result;
+              });
+            },
+          });
+        });
+      });
+    }
+  }
+  customElements.define("site-search", SiteSearch);
+</script>

@@ -1,0 +1,117 @@
+import { visit } from "unist-util-visit";
+import { FRAMEWORK_ICONS } from "./framework-icons.mjs";
+
+/**
+ * Remark plugin that replaces <CodeGroup>...</CodeGroup> in MDX with a
+ * framework-aware tab widget. Each fenced code block inside becomes a
+ * panel tagged with `data-framework="<label>"`, and tab buttons above
+ * the code drive a single `document.documentElement.dataset.framework`
+ * value — so every CodeGroup (and every framework-specific wrapper)
+ * on the page stays in sync.
+ *
+ * Why at the AST level rather than a React component? Astro's
+ * expressive-code renders code fences as Astro virtual components, so
+ * a React CodeGroup can't peek at its children's props to extract the
+ * language/metastring. Transforming before expressive-code runs lets
+ * us read `node.lang` and `node.meta` directly.
+ *
+ * The tab label is pulled from the fence metastring, with any
+ * `icon="..."` attribute stripped, falling back to the language name:
+ *     ```vue Vue 3 icon="vuejs"   =>  label "Vue 3", icon "vuejs"
+ *     ```jsx React icon="react"   =>  label "React", icon "react"
+ *
+ * Non-first panels are emitted with `hidden` set at build time so the
+ * no-JS fallback shows only the first block — the client switcher then
+ * toggles `hidden` on subsequent user selections.
+ */
+
+function attr(name, value) {
+  return { type: "mdxJsxAttribute", name, value };
+}
+
+function parseFence(node, index) {
+  const raw = node.meta || "";
+  const iconMatch = raw.match(/icon="([^"]*)"/);
+  const icon = iconMatch ? iconMatch[1] : null;
+  const label = raw.replace(/\s*icon="[^"]*"/g, "").trim() || node.lang || `Tab ${index + 1}`;
+  return { label, icon };
+}
+
+export function rewriteCodeGroup() {
+  return function transformer(tree) {
+    visit(tree, "mdxJsxFlowElement", (node, index, parent) => {
+      if (!parent || node.name !== "CodeGroup") return;
+
+      const codes = node.children.filter((c) => c.type === "code");
+      if (codes.length === 0) return;
+
+      const fences = codes.map(parseFence);
+
+      const tabButtons = fences.map(({ label, icon }, i) => {
+        const children = [];
+        const svg = icon && FRAMEWORK_ICONS[icon];
+        if (svg) {
+          // Raw HTML node — Astro's MDX pipeline passes these through as
+          // unescaped HTML, which lets us inline the SVG without building
+          // an mdxJsxFlowElement tree for every path/circle.
+          children.push({ type: "html", value: svg });
+        }
+        children.push({ type: "text", value: label });
+        return {
+          type: "mdxJsxFlowElement",
+          name: "button",
+          attributes: [
+            attr("type", "button"),
+            attr("class", `code-group__tab${i === 0 ? " is-active" : ""}`),
+            attr("data-framework", label),
+          ],
+          children,
+        };
+      });
+
+      const panels = codes.map((code, i) => {
+        const attrs = [
+          attr("class", "code-group__panel"),
+          attr("data-framework", fences[i].label),
+        ];
+        // Hide non-first panels at build time — no-JS fallback shows the
+        // first; the switcher script re-assigns `hidden` on click. mdast
+        // renders an attribute with `value: null` as a bare boolean attr.
+        if (i !== 0) attrs.push({ type: "mdxJsxAttribute", name: "hidden", value: null });
+        return {
+          type: "mdxJsxFlowElement",
+          name: "div",
+          attributes: attrs,
+          children: [code],
+        };
+      });
+
+      const wrapper = {
+        type: "mdxJsxFlowElement",
+        name: "div",
+        attributes: [
+          attr("class", "code-group"),
+          attr("data-code-group", ""),
+          attr("data-frameworks", fences.map((f) => f.label).join("|")),
+        ],
+        children: [
+          {
+            type: "mdxJsxFlowElement",
+            name: "div",
+            attributes: [attr("class", "code-group__tabs")],
+            children: tabButtons,
+          },
+          {
+            type: "mdxJsxFlowElement",
+            name: "div",
+            attributes: [attr("class", "code-group__panels")],
+            children: panels,
+          },
+        ],
+      };
+
+      parent.children.splice(index, 1, wrapper);
+      return index + 1;
+    });
+  };
+}

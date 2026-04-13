@@ -1,0 +1,108 @@
+---
+import Default from "@astrojs/starlight/components/PageTitle.astro";
+
+// Show the "Open Markdown" dropdown only on versioned docs pages.
+const pathname = Astro.url.pathname;
+const versionMatch = pathname.match(/^\/docs\/(v\d+)\//);
+const isDocsPage = versionMatch !== null;
+const version = versionMatch?.[1];
+
+// Build the markdown URL. Starlight uses trailing-slash URLs so the
+// markdown file lives at `${pathname}index.md` — matches the integration
+// which emits both `page.md` and `page/index.md` for safety.
+const mdUrl = pathname.endsWith("/") ? `${pathname}index.md` : `${pathname}.md`;
+---
+
+<div
+  class="page-title-wrap"
+  data-pagefind-filter={version ? `version:${version}` : undefined}
+>
+  <Default><slot /></Default>
+  {
+    isDocsPage && (
+      <div class="md-actions" data-md-url={mdUrl}>
+        <button
+          type="button"
+          class="md-actions__button"
+          aria-haspopup="true"
+          aria-expanded="false"
+          data-md-button
+        >
+          Open Markdown
+          <svg width="10" height="10" viewBox="0 0 16 16" aria-hidden="true" fill="currentColor">
+            <path d="M4.427 6.427l3.396 3.396a.25.25 0 00.354 0l3.396-3.396A.25.25 0 0011.396 6H4.604a.25.25 0 00-.177.427z" />
+          </svg>
+        </button>
+        <ul class="md-actions__menu" role="menu" data-md-menu hidden>
+          <li>
+            <button type="button" role="menuitem" class="md-actions__item" data-md-view>
+              View as Markdown
+            </button>
+          </li>
+          <li>
+            <button type="button" role="menuitem" class="md-actions__item" data-md-copy>
+              Copy Page as Markdown
+            </button>
+          </li>
+        </ul>
+      </div>
+    )
+  }
+</div>
+
+<script>
+  const wrap = document.querySelector<HTMLElement>(".md-actions");
+  const btn = document.querySelector<HTMLButtonElement>("[data-md-button]");
+  const menu = document.querySelector<HTMLElement>("[data-md-menu]");
+  const view = document.querySelector<HTMLButtonElement>("[data-md-view]");
+  const copy = document.querySelector<HTMLButtonElement>("[data-md-copy]");
+
+  if (wrap && btn && menu && view && copy) {
+    const mdUrl = wrap.dataset.mdUrl ?? "";
+
+    const place = () => {
+      const rect = btn.getBoundingClientRect();
+      menu.style.top = `${rect.bottom + 4}px`;
+      menu.style.right = `${window.innerWidth - rect.right}px`;
+    };
+    const toggle = (open: boolean) => {
+      if (open) place();
+      menu.hidden = !open;
+      btn.setAttribute("aria-expanded", String(open));
+    };
+
+    btn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      toggle(menu.hidden);
+    });
+    document.addEventListener("click", (e) => {
+      if (!menu.contains(e.target as Node) && e.target !== btn) toggle(false);
+    });
+    window.addEventListener("scroll", () => toggle(false), { passive: true });
+    window.addEventListener("resize", () => toggle(false));
+
+    view.addEventListener("click", () => {
+      window.open(mdUrl, "_blank");
+      toggle(false);
+    });
+
+    copy.addEventListener("click", async () => {
+      try {
+        const response = await fetch(mdUrl);
+        if (!response.ok) throw new Error(`status ${response.status}`);
+        const markdown = await response.text();
+        await navigator.clipboard.writeText(markdown);
+        const original = copy.textContent;
+        copy.textContent = "Copied!";
+        copy.disabled = true;
+        setTimeout(() => {
+          copy.textContent = original;
+          copy.disabled = false;
+          toggle(false);
+        }, 1500);
+      } catch (err) {
+        console.error("Failed to copy markdown:", err);
+      }
+    });
+  }
+</script>
