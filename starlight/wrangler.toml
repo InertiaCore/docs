@@ -1,0 +1,48 @@
+#:schema node_modules/wrangler/config-schema.json
+
+# Cloudflare Worker config for the Starlight docs build.
+#
+# Deployment model: Workers Static Assets (no Worker script needed).
+# Wrangler uploads `./dist` and serves it directly. Because every page
+# the build produces lives under `/docs/...` (the splash at /docs/, all
+# versioned content at /docs/v1/, /docs/v2/, /docs/v3/), this Worker
+# slots cleanly into a `/docs/*` route on a parent zone.
+#
+# Build first:    pnpm --filter starlight build
+# Deploy:         npx wrangler deploy
+# Local preview:  npx wrangler dev
+#
+# To mount on the /docs/* subpath of an existing zone, uncomment the
+# [[routes]] block below and replace the pattern + zone_name with your
+# domain. Without routes, the Worker is reachable at its
+# *.workers.dev URL.
+
+name = "inertiacore-docs"
+compatibility_date = "2026-04-13"
+
+# Workers Static Assets — points at the Astro build output.
+# `not_found_handling = "404-page"` makes Cloudflare serve dist/404.html
+# for unmatched paths, which Starlight already generates.
+[assets]
+directory = "./dist"
+not_found_handling = "404-page"
+
+# Route binding lives in CI, not here.
+#
+# Wrangler does not interpolate environment variables inside
+# `[[routes]]` blocks, so this file ships without one. The deploy
+# workflow appends a `[[routes]]` block from the `CF_ROUTE_PATTERN` and
+# `CF_ZONE_NAME` GitHub Actions repository variables before running
+# `wrangler deploy` — see .github/workflows/deploy-starlight.yml.
+#
+# Without a route, `wrangler deploy` puts this Worker on its
+# *.workers.dev URL, which is fine for local smoke-testing via
+# `npx wrangler deploy` or `npx wrangler dev`.
+
+# Optional: separate dev/staging environment with its own subdomain.
+#
+# [env.staging]
+# name = "inertiacore-docs-staging"
+# [env.staging.assets]
+# directory = "./dist"
+# not_found_handling = "404-page"

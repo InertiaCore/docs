@@ -1,0 +1,89 @@
+name: Deploy Starlight docs to Cloudflare
+
+on:
+  push:
+    branches: [3.x]
+    # Only run when something the build actually consumes changes —
+    # avoids re-deploying when the legacy docusaurus tree or unrelated
+    # repo files are touched.
+    paths:
+      - "starlight/**"
+      - "v1/**"
+      - "v2/**"
+      - "v3/**"
+      - "snippets/**"
+      - "images/**"
+      - "assets/**"
+      - "mp4/**"
+      - "fonts/**"
+      - "favicon.svg"
+      - ".github/workflows/deploy-starlight.yml"
+  # Manual trigger from the Actions tab.
+  workflow_dispatch:
+
+# Cancel any in-flight deploy when a newer commit lands on main.
+concurrency:
+  group: deploy-starlight
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    name: Build & deploy
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      deployments: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+          cache-dependency-path: starlight/pnpm-lock.yaml
+
+      - name: Install dependencies
+        working-directory: starlight
+        run: pnpm install --frozen-lockfile
+
+      - name: Build site
+        working-directory: starlight
+        run: pnpm build
+
+      - name: Inject Cloudflare route into wrangler.toml
+        # wrangler.toml ships without a [[routes]] block because wrangler
+        # doesn't interpolate env vars there. Append one from repo vars
+        # so the same file works for local *.workers.dev deploys and for
+        # zone-bound CI deploys without a code change.
+        if: vars.CF_ROUTE_PATTERN != '' && vars.CF_ZONE_NAME != ''
+        working-directory: starlight
+        env:
+          CF_ROUTE_PATTERN: ${{ vars.CF_ROUTE_PATTERN }}
+          CF_ZONE_NAME: ${{ vars.CF_ZONE_NAME }}
+        run: |
+          {
+            echo ""
+            echo "[[routes]]"
+            echo "pattern = \"${CF_ROUTE_PATTERN}\""
+            echo "zone_name = \"${CF_ZONE_NAME}\""
+          } >> wrangler.toml
+          echo "--- wrangler.toml route block ---"
+          tail -4 wrangler.toml
+
+      - name: Deploy to Cloudflare Workers
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          workingDirectory: starlight
+          # wrangler reads ./wrangler.toml from workingDirectory and uses
+          # the [assets] block to upload ./dist.
+          command: deploy
