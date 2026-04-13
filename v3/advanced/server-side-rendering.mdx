@@ -11,12 +11,21 @@ Server-side rendering pre-renders your JavaScript pages on the server, allowing 
 
 Server-side rendering uses Node.js to render your pages in a background process; therefore, Node must be available on your server for server-side rendering to function properly. Inertia's SSR server requires Node.js 22 or higher.
 
-## Laravel Starter Kits
+## InertiaCore Scaffolding
 
-If you are using [Laravel Starter Kits](https://laravel.com/docs/starter-kits), Inertia SSR is [supported](https://laravel.com/docs/starter-kits#inertia-ssr) through a build command:
+If you scaffolded your app with [`create-inertiacore`](https://www.npmjs.com/package/create-inertiacore), SSR support is already wired up — you can enable it by setting `options.SsrEnabled = true` in `AddInertia(...)` and running the SSR build script:
 
-```bash
+```sh
 npm run build:ssr
+```
+
+```csharp
+// Program.cs
+builder.Services.AddInertia(options =>
+{
+    options.SsrEnabled = true;
+    options.SsrUrl = "http://127.0.0.1:13714/render";
+});
 ```
 
 ## Vite Plugin Setup

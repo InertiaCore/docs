@@ -17,13 +17,21 @@ Server-side rendering pre-renders your JavaScript pages on the server, allowing 
 
 Server-side rendering uses Node.js to render your pages in a background process; therefore, Node must be available on your server for server-side rendering to function properly.
 
-## Laravel Starter Kits
+## InertiaCore Scaffolding
 
-If you are using [Laravel Breeze or Jetstream](https://laravel.com/docs/starter-kits), you may install the starter kit's scaffolding with Inertia SSR support pre-configured using the `--ssr` flag.
+If you scaffolded your app with [`create-inertiacore`](https://www.npmjs.com/package/create-inertiacore), SSR support is already wired up — enable it by setting `options.SsrEnabled = true` in `AddInertia(...)` and running the SSR build script:
 
-```bash
-php artisan breeze:install react --ssr
-php artisan breeze:install vue --ssr
+```sh
+npm run build:ssr
+```
+
+```csharp
+// Program.cs
+builder.Services.AddInertia(options =>
+{
+    options.SsrEnabled = true;
+    options.SsrUrl = "http://127.0.0.1:13714/render";
+});
 ```
 
 ## Install Dependencies
