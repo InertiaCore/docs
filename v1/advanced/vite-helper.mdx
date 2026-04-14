@@ -1,0 +1,170 @@
+---
+title: Vite Helper
+---
+
+import V1EOLWarning from "/snippets/v1-eol-warning.mdx";
+
+<V1EOLWarning />
+
+
+InertiaCore ships a Vite helper class that auto-loads your generated styles and scripts from the Vite manifest. Combine it with the [`@inertiacore/vite-plugin`](https://www.npmjs.com/package/@inertiacore/vite-plugin) npm package and you'll get hashed asset URLs in production and HMR in development with no manual `<link>` or `<script>` tags.
+
+## Registering the helper
+
+Add `AddViteHelper()` to your service container in `Program.cs`. When the helper is registered, `UseInertia()` automatically calls `Inertia.Version(Vite.GetManifestHash)` so cached pages get invalidated whenever your assets change.
+
+```csharp
+using InertiaCore.Extensions;
+
+builder.Services.AddInertia();
+builder.Services.AddViteHelper();
+
+// Or with options (default values shown)
+builder.Services.AddViteHelper(options =>
+{
+    options.PublicDirectory = "wwwroot";
+    options.BuildDirectory = "build";
+    options.HotFile = "hot";
+    options.ManifestFilename = "manifest.json";
+});
+```
+
+## Razor helpers
+
+Two Razor helpers are exposed via `InertiaCore.Utils`:
+
+- `@Vite.Input("src/app.tsx")` — emits `<script>`/`<link>` tags for the given entry. In dev it points at the Vite dev server; in production it reads the manifest and emits hashed URLs.
+- `@Vite.ReactRefresh()` — emits the React Fast Refresh runtime script. Required for React HMR; must come **before** the React entry input.
+
+## Vite plugin configuration
+
+Install the plugin and add it to your `vite.config.ts`:
+
+```sh
+npm install -D @inertiacore/vite-plugin
+```
+
+```ts vite.config.ts
+import { defineConfig } from "vite";
+import inertiacore from "@inertiacore/vite-plugin";
+
+export default defineConfig({
+  plugins: [
+    inertiacore({
+      input: ["src/app.ts"],
+      refresh: true,
+    }),
+  ],
+});
+```
+
+The plugin shares the same defaults as `AddViteHelper`. If you override either side, override both:
+
+```ts
+inertiacore({
+  input: ["src/app.ts"],
+  refresh: true,
+  publicDirectory: "../wwwroot",
+  buildDirectory: "build",
+  hotFile: "hot",
+  manifestFilename: "manifest.json",
+});
+```
+
+## Examples
+
+### React + TypeScript with HMR
+
+`@Vite.ReactRefresh()` must be rendered **before** `@Vite.Input(...)` to avoid the "preamble error" from React's plugin.
+
+```cshtml ~/Views/App.cshtml
+@using InertiaCore
+@using InertiaCore.Utils
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title inertia>My App</title>
+        @await Inertia.Head(Model)
+    </head>
+    <body>
+        @* React refresh first, otherwise the React plugin throws a preamble error *@
+        @Vite.ReactRefresh()
+        @await Inertia.Html(Model)
+        @Vite.Input("src/main.tsx")
+    </body>
+</html>
+```
+
+```ts ClientApp/vite.config.ts
+import { defineConfig } from "vite";
+import react from "@vitejs/plugin-react";
+import inertiacore from "@inertiacore/vite-plugin";
+
+export default defineConfig({
+  plugins: [
+    inertiacore({ input: ["src/main.tsx"] }),
+    react(),
+  ],
+  build: { emptyOutDir: true },
+});
+```
+
+### Vue + TypeScript with hot reload
+
+```cshtml ~/Views/App.cshtml
+@using InertiaCore
+@using InertiaCore.Utils
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title inertia>My App</title>
+        @await Inertia.Head(Model)
+    </head>
+    <body>
+        @await Inertia.Html(Model)
+        @Vite.Input("src/app.ts")
+    </body>
+</html>
+```
+
+```ts ClientApp/vite.config.ts
+import { defineConfig } from "vite";
+import vue from "@vitejs/plugin-vue";
+import inertiacore from "@inertiacore/vite-plugin";
+
+export default defineConfig({
+  plugins: [
+    inertiacore({ input: ["src/app.ts"], refresh: true }),
+    vue({
+      template: {
+        transformAssetUrls: { base: null, includeAbsolute: false },
+      },
+    }),
+  ],
+  build: { emptyOutDir: true },
+});
+```
+
+### CSS-only entry
+
+`@Vite.Input(...)` accepts any path the manifest knows about — including pure CSS or SCSS entries.
+
+```cshtml ~/Views/App.cshtml
+@using InertiaCore
+@using InertiaCore.Utils
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    </head>
+    <body>
+        @await Inertia.Html(Model)
+        @Vite.Input("src/main.scss")
+    </body>
+</html>
+```

@@ -1,0 +1,128 @@
+---
+title: Recommended Middleware
+---
+
+ASP.NET Core ships several middleware out of the box. InertiaCore plays nicely with them, but the order in which you register them — and which optional middleware you add — matters. Here's the recommended setup.
+
+| Middleware | Required? | Why |
+|---|---|---|
+| Antiforgery | Recommended | CSRF protection on non-`GET` requests |
+| Session | Required for flash data | Backs `TempData` and validation error bags |
+| `HandleInertiaRequests` (custom) | Optional | One place to share auth + flash on every response |
+| Exception handler | Recommended | Renders an Inertia error page on uncaught exceptions |
+| `UseInertia()` | Required | Registers the InertiaCore middleware |
+
+## Session
+
+`AddSession()` is required if you want flash messages, validation error bags, or anything that lives in `TempData` to survive a redirect. Wire it up before `UseInertia()` so the InertiaCore middleware can read from it.
+
+```csharp
+// Program.cs
+builder.Services.AddControllersWithViews()
+    .AddSessionStateTempDataProvider();
+
+builder.Services.AddSession(options =>
+{
+    options.Cookie.Name = "App.Session";
+    options.Cookie.HttpOnly = true;
+    options.Cookie.IsEssential = true;
+    options.IdleTimeout = TimeSpan.FromMinutes(30);
+});
+
+builder.Services.AddInertia();
+builder.Services.AddViteHelper();
+
+var app = builder.Build();
+
+app.UseStaticFiles();
+app.UseRouting();
+app.UseSession();
+// app.UseAuthentication();
+// app.UseAuthorization();
+app.UseInertia();
+
+app.MapControllerRoute(
+    name: "default",
+    pattern: "{controller}/{action=Index}/{id?}");
+```
+
+The order in the request pipeline is: **static files → routing → session → auth → InertiaCore → endpoints**. `UseInertia()` must come after `UseSession()` and your auth middleware so it can access `TempData` and `HttpContext.User`.
+
+## HandleInertiaRequests
+
+A custom middleware is the cleanest place to attach data that should appear on every Inertia response — typically the current user, flash messages, and feature flags. Register it once after `UseInertia()`.
+
+```csharp
+// Program.cs
+app.UseInertia();
+app.UseMiddleware<HandleInertiaRequests>();
+```
+
+```csharp
+// Middleware/HandleInertiaRequests.cs
+using InertiaCore;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Mvc.ViewFeatures;
+
+namespace App.Middleware;
+
+public class HandleInertiaRequests
+{
+    private readonly RequestDelegate _next;
+
+    public HandleInertiaRequests(RequestDelegate next) => _next = next;
+
+    public async Task InvokeAsync(HttpContext context)
+    {
+        Inertia.Share("flash", () =>
+        {
+            var factory = context.RequestServices.GetRequiredService<ITempDataDictionaryFactory>();
+            var tempData = factory.GetTempData(context);
+            var flash = new Dictionary<string, object>();
+
+            if (tempData.TryGetValue("error", out var error) && error is not null)
+                flash["error"] = error.ToString() ?? string.Empty;
+
+            if (tempData.TryGetValue("success", out var success) && success is not null)
+                flash["success"] = success.ToString() ?? string.Empty;
+
+            return flash;
+        });
+
+        Inertia.Share("auth", () =>
+        {
+            if (context.User.Identity?.IsAuthenticated != true)
+                return new { user = (object?)null };
+
+            var userManager = context.RequestServices.GetRequiredService<UserManager<User>>();
+            var user = userManager.GetUserAsync(context.User).GetAwaiter().GetResult();
+
+            if (user is null)
+                return new { user = (object?)null };
+
+            return new
+            {
+                user = new
+                {
+                    id = user.Id,
+                    first_name = user.FirstName,
+                    last_name = user.LastName,
+                    email = user.Email,
+                },
+            };
+        });
+
+        await _next(context);
+    }
+}
+```
+
+> **Heads up:** every Inertia response includes the shared data, so keep these closures cheap. For expensive lookups, wrap them in `Inertia.Lazy(...)` so they're only resolved on partial reloads, or cache them per-request via `IMemoryCache` / scoped DI.
+
+## Antiforgery (CSRF)
+
+Add `AddAntiforgery()` and `UseAntiforgery()` to validate the CSRF token on non-`GET` requests. To turn token-mismatch failures into a friendly Inertia redirect-back instead of a raw 400, see the [CSRF protection](/v3/security/csrf-protection) page.
+
+## Exception handling
+
+Wire an exception handler to render an InertiaCore error page on uncaught exceptions. The recommended pattern uses `Inertia.HandleExceptionsUsing(...)` + `app.UseInertiaExceptionHandler()` — see the [error handling](/v3/advanced/error-handling) page for the full snippet.
