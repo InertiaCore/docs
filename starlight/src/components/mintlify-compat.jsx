@@ -1,29 +1,15 @@
 import React from "react";
 
-// Re-export Starlight's Card so content files outside the project root
-// (symlinked v1/v2/v3 trees) can reach it via this shim's absolute path.
-// Auto-import maps <Card> → this re-export.
-export { Card } from "@astrojs/starlight/components";
-
-// --- Admonition wrappers -> Starlight aside CSS classes ---
-
-const Aside = ({ type, children }) => (
-  <aside
-    aria-label={type}
-    className={`starlight-aside starlight-aside--${type}`}
-  >
-    <p className="starlight-aside__title">
-      <span className="starlight-aside__icon" aria-hidden="true" />
-      {type[0].toUpperCase() + type.slice(1)}
-    </p>
-    <section className="starlight-aside__content">{children}</section>
-  </aside>
-);
-
-export const Warning = ({ children }) => <Aside type="caution">{children}</Aside>;
-export const Note = ({ children }) => <Aside type="note">{children}</Aside>;
-export const Info = ({ children }) => <Aside type="note">{children}</Aside>;
-export const Tip = ({ children }) => <Aside type="tip">{children}</Aside>;
+// Re-export Starlight components from this shim so content files outside
+// the project root (symlinked v1/v2/v3 trees) can reach them via the
+// shim's absolute path — Vite can't resolve `@astrojs/starlight/...`
+// from /docs/v* MDX files because they live outside the project's
+// `node_modules` lookup chain.
+//
+// `Aside` is referenced via the rewriteAsides remark plugin which maps
+// <Warning>/<Note>/<Info>/<Tip> → <Aside type="...">. `Card` is
+// referenced directly by content files.
+export { Aside, Card } from "@astrojs/starlight/components";
 
 // --- Framework filter wrappers ---
 // Emit a wrapper <div> with `data-framework-only` listing every framework

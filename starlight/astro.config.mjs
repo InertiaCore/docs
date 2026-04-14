@@ -6,6 +6,7 @@ import react from "@astrojs/react";
 import mdx from "@astrojs/mdx";
 import { injectMdxImports } from "./src/remark/inject-mdx-imports.mjs";
 import { rewriteCodeGroup } from "./src/remark/rewrite-code-group.mjs";
+import { rewriteAsides } from "./src/remark/rewrite-asides.mjs";
 import { sidebarV1 } from "./src/sidebars/v1.mjs";
 import { sidebarV2 } from "./src/sidebars/v2.mjs";
 import { sidebarV3 } from "./src/sidebars/v3.mjs";
@@ -18,14 +19,13 @@ const mintlifyShim = path.resolve(here, "src/components/mintlify-compat.jsx");
 // Names the shim re-exports (both its own components and re-exported
 // Starlight primitives). Every .mdx file gets these injected globally,
 // except when the file already imports a binding with the same name.
-// CodeGroup is intentionally NOT here — it's rewritten at the AST level
-// by the rewriteCodeGroup remark plugin, so no runtime component is needed.
+//
+// Intentionally NOT in this list:
+//   - CodeGroup → rewritten to a div tree by rewriteCodeGroup
+//   - Warning/Note/Info/Tip → rewritten to <Aside type="..."> by rewriteAsides
 const GLOBAL_MDX_NAMES = [
   "Card",
-  "Warning",
-  "Note",
-  "Info",
-  "Tip",
+  "Aside",
   "Columns",
   "Steps",
   "Step",
@@ -72,10 +72,11 @@ export default defineConfig({
   },
   markdown: {
     remarkPlugins: [
-      // Must run BEFORE injectMdxImports: CodeGroup rewriting removes the
-      // <CodeGroup> element entirely, so we don't need to inject an import
-      // for a component that's already gone.
+      // Element rewrites must run BEFORE injectMdxImports — they replace
+      // the original tag names so the import injector knows it doesn't
+      // need to provide bindings for the originals.
       rewriteCodeGroup,
+      rewriteAsides,
       [
         injectMdxImports,
         {
