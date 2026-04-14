@@ -7,10 +7,10 @@ const versionMatch = pathname.match(/^\/docs\/(v\d+)\//);
 const isDocsPage = versionMatch !== null;
 const version = versionMatch?.[1];
 
-// Build the markdown URL. Starlight uses trailing-slash URLs so the
-// markdown file lives at `${pathname}index.md` — matches the integration
-// which emits both `page.md` and `page/index.md` for safety.
-const mdUrl = pathname.endsWith("/") ? `${pathname}index.md` : `${pathname}.md`;
+// Build the markdown URL. The src/pages/docs/[...slug].md.ts endpoint
+// matches `${path}.md`, so strip the trailing slash from the page URL
+// before appending the extension.
+const mdUrl = pathname.replace(/\/$/, "") + ".md";
 ---
 
 <div

@@ -6,7 +6,6 @@ import react from "@astrojs/react";
 import mdx from "@astrojs/mdx";
 import { injectMdxImports } from "./src/remark/inject-mdx-imports.mjs";
 import { rewriteCodeGroup } from "./src/remark/rewrite-code-group.mjs";
-import { markdownSource } from "./src/integrations/markdown-source.mjs";
 import { sidebarV1 } from "./src/sidebars/v1.mjs";
 import { sidebarV2 } from "./src/sidebars/v2.mjs";
 import { sidebarV3 } from "./src/sidebars/v3.mjs";
@@ -150,14 +149,8 @@ export default defineConfig({
       ],
     }),
     mdx(),
-    markdownSource({
-      docsRoot,
-      versions: [
-        { src: "v1", route: "docs/v1" },
-        { src: "v2", route: "docs/v2" },
-        { src: "v3", route: "docs/v3" },
-      ],
-    }),
+    // markdownSource() integration removed — replaced by the
+    // src/pages/docs/[...slug].md.ts endpoint, which works in dev too.
   ],
   vite: {
     plugins: [snippetLoaderPlugin()],
