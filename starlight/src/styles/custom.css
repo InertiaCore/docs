@@ -207,6 +207,15 @@
    switcher re-assigns it on tab click. */
 .code-group__panel[hidden] { display: none; }
 
+/* Starlight's content cascade adds `margin-top: 1rem` between sibling
+   `:not(a, strong, em, ...)` blocks inside `.sl-markdown-content`. Our
+   panels are siblings under `.code-group__panels`, so when JS unhid a
+   non-first panel that rule kicked in and the active code block jumped
+   down by 1rem. Explicitly zero it for our panels. */
+.code-group__panel {
+  margin-top: 0 !important;
+}
+
 /* Flatten expressive-code's own frame so the outer `.code-group` card is
    the only visible container. */
 .code-group__panels .expressive-code,
