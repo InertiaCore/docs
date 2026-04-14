@@ -55,8 +55,10 @@ export const sidebarV1 = [
       "error-handling",
       "asset-versioning",
       "progress-indicators",
+      "recommended-middleware",
       "remembering-state",
       "server-side-rendering",
+      "vite-helper",
     ].map((s) => ({ slug: `${base}/advanced/${s}` })),
   },
 ];

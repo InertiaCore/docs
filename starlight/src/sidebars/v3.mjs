@@ -74,10 +74,12 @@ export const sidebarV3 = [
       "error-handling",
       "events",
       "progress-indicators",
+      "recommended-middleware",
       "scroll-management",
       "server-side-rendering",
       "testing",
       "typescript",
+      "vite-helper",
     ].map((s) => ({ slug: `${base}/advanced/${s}` })),
   },
 ];
