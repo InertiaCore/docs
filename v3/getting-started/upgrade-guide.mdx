@@ -2,367 +2,387 @@
 title: Upgrade Guide for v3.0
 ---
 
-You can find the legacy docs for Inertia.js v2.0 at [inertiajs.com/docs/v2](/v2).
+InertiaCore v3.0 brings the C# / ASP.NET Core adapter up to parity with the
+canonical Inertia.js v3.0 wire format. This release focuses on a unified prop
+resolution pipeline, richer SSR observability, and a handful of small APIs that
+close the gap with the Laravel adapter. You can find the legacy docs for v2.0
+at [inertiacore.dev/docs/v2](/v2).
 
 ## What's New
 
-Inertia.js v3.0 is a major release focused on simplicity and developer experience. Axios has been replaced with a built-in XHR client for a smaller bundle, SSR now works out of the box during development without a separate Node.js server, and the new `@inertiajs/vite` plugin handles page resolution and SSR configuration automatically. This release also introduces standalone HTTP requests via the `useHttp` hook, optimistic updates with automatic rollback, layout props for sharing data between pages and layouts, and improved exception handling.
-
 <Columns cols={2}>
-    <Card title="Vite Plugin" href="/v3/installation/client-side-setup#installation" icon="bolt">
-        Automatic page resolution, SSR setup, and optional setup/resolve callbacks.
+    <Card title="PropsResolver Refactor" href="/v3/data-props/prop-resolution" icon="sitemap">
+        A single recursive walker handles shared, partial, merge, defer, once, and scroll resolution in one pass. Nested prop types now work at any depth.
     </Card>
-    <Card title="HTTP Requests" href="/v3/the-basics/http-requests" icon="globe">
-        Make standalone HTTP requests with the useHttp hook, without triggering page visits.
+    <Card title="Exception Responses" href="/v3/advanced/error-handling" icon="shield">
+        Render a custom Inertia error page directly from your exception middleware via <code>Inertia.HandleExceptionsUsing(...)</code>.
     </Card>
-    <Card title="Optimistic Updates" href="/v3/the-basics/optimistic-updates" icon="sparkles">
-        Apply data changes instantly before the server responds, with automatic rollback on failure.
+    <Card title="Disable SSR Per-Request" href="/v3/advanced/server-side-rendering#disabling-ssr" icon="server">
+        Opt individual requests or URL patterns out of SSR with <code>Inertia.DisableSsr()</code> and <code>Inertia.WithoutSsr()</code>.
     </Card>
-    <Card title="Layout Props" href="/v3/the-basics/layouts#layout-props" icon="layer-group">
-        Share dynamic data between pages and persistent layouts with the useLayoutProps hook.
+    <Card title="SSR Failure Events" href="/v3/advanced/server-side-rendering#error-handling" icon="bell">
+        Subscribe to <code>IGateway.RenderFailed</code> for structured SSR failure reporting with error type, hint, and source location.
     </Card>
-    <Card title="Simplified SSR" href="/v3/advanced/server-side-rendering" icon="server">
-        SSR works automatically in Vite dev mode. No separate Node.js server needed.
+    <Card title="Nested Prop Types" href="/v3/data-props/nested-props" icon="layer-group">
+        <code>Inertia.Merge()</code>, <code>Inertia.Defer()</code>, and <code>Inertia.Once()</code> now work inside closures and nested dictionaries.
     </Card>
-    <Card title="Exception Handling" href="/v3/advanced/error-handling#production" icon="shield">
-        Render custom Inertia error pages directly from your exception handler, with shared data.
+    <Card title="Component Transformers" href="/v3/the-basics/responses#component-transformer" icon="bolt">
+        Rewrite component names at render time via <code>Inertia.TransformComponentUsing(...)</code> for backend-driven versioning.
     </Card>
 </Columns>
 
 This release also includes several additional improvements:
 
-- [Instant visits](/v3/the-basics/instant-visits) that swap to the target component before the server responds
-- [Form component generics](/v3/advanced/typescript#form-component) for type-safe errors and slot props
-- [Disable SSR per-route](/v3/advanced/server-side-rendering#disabling-ssr) via middleware or facade
-- [Improved SSR error messages](/v3/advanced/server-side-rendering#error-handling) with component names, URLs, and actionable hints
-- [Enum support](/v3/the-basics/responses) in `Inertia::render()` responses
-- [Page object in resolve callback](/v3/installation/client-side-setup#manual-setup) for context-aware component resolution
-- [Built-in HTTP interceptors](/v3/installation/client-side-setup#interceptors) without Axios
-- [Default layout](/v3/the-basics/layouts#default-layouts) option in `createInertiaApp`
-- [`preserveErrors`](/v3/data-props/partial-reloads#preserving-errors) option to preserve validation errors during partial reloads
-- [Blade components](/v3/installation/server-side-setup#setup-root-template) as an alternative to the `@inertia` and `@inertiaHead` directives, with SSR head fallback support
+- [Preserve URL fragment](/v3/the-basics/redirects#preserve-fragment) across redirects via `Inertia.PreserveFragment()`
+- [`Inertia.Render(Enum)`](/v3/the-basics/responses#enum-components) overload accepts typed enum members as component names
+- [`Inertia.PullFlashed()`](/v3/data-props/flash-data#pull-flashed) reads and clears flash data in one call
+- [`sharedProps` metadata](/v3/core-concepts/the-protocol#the-page-object) field on the page response lets the frontend preserve shared props across instant visits
+- [Dot-notation top-level keys](/v3/data-props/nested-props#dot-notation) are automatically unpacked into nested prop structures
+- [`HttpContext.Items`-backed history flags](/v3/the-basics/security#history-encryption) for concurrency-safe `ClearHistory` / `EncryptHistory` state on singleton factories
 
 ## Upgrade Dependencies
 
-To upgrade to Inertia.js v3.0, first use npm to install the client-side adapter of your choice:
+To upgrade to InertiaCore v3.0, update the NuGet package in your
+`.csproj`:
 
 <CodeGroup>
 
-```bash Vue icon="vuejs"
-npm install @inertiajs/vue3@^3.0
+```bash CLI icon="terminal"
+dotnet add package AspNetCore.InertiaCore --version 3.0.0
 ```
 
-```bash React icon="react"
-npm install @inertiajs/react@^3.0
-```
-
-```bash Svelte icon="s"
-npm install @inertiajs/svelte@^3.0
+```xml PackageReference icon="code"
+<PackageReference Include="AspNetCore.InertiaCore" Version="3.0.0" />
 ```
 
 </CodeGroup>
 
-You may also install the new optional Vite plugin, which provides a simplified SSR setup and a `pages` shorthand for component resolution:
+InertiaCore v3.0 targets .NET 6.0, 7.0, 8.0, and 9.0. If your app targets an
+older TFM, stay on v2.
 
-```bash
-npm install @inertiajs/vite@^3.0
-```
-
-Next, upgrade the `inertiajs/inertia-laravel` package:
-
-```bash
-composer require inertiajs/inertia-laravel:^3.0
-```
-
-After upgrading, republish the Inertia configuration file since it has been restructured in v3. You should review the updated config file and re-apply any customizations:
-
-```bash
-php artisan vendor:publish --provider="Inertia\\ServiceProvider" --force
-```
-
-You should also clear your cached views since the `@inertia` Blade directive output has changed:
-
-```bash
-php artisan view:clear
-```
-
+After upgrading, review your `InertiaOptions` configuration. A handful of
+options were renamed or moved in this release — see the [configuration
+changes](#configuration-changes) section below.
 
 ## Breaking Changes
 
 ---
 
-### Requirements
+### `Response` Constructor Signature
 
-#### PHP 8.2+ and Laravel 11+
+The internal `Response` constructor now takes the resolved prop dictionary,
+shared props, and metadata as a single `PropsResolver` output rather than a
+stream of individual flags. Application code does not call this constructor
+directly, but if your test suite uses reflection to instantiate
+`Response` — a pattern some downstream test harnesses follow to work around the
+`internal` visibility — you will need to update the argument list.
 
-The Laravel adapter now requires PHP 8.2 and Laravel 11 at a minimum.
+The previous 9-parameter signature:
 
-#### React 19+
-
-The React adapter now requires React 19. React 18 and below are no longer supported.
-
-#### Svelte 5+
-
-The Svelte adapter now requires Svelte 5. Svelte 4 and below are no longer supported. All Svelte code should be updated to use the Svelte 5 runes syntax (`$props()`, `$state()`, `$effect()`, etc).
-
-### Axios Removed
-
-Inertia no longer ships with or requires Axios. For most applications, this requires no changes. The built-in XHR client supports [interceptors](/v3/installation/client-side-setup#interceptors) as well, so Axios interceptors may be migrated directly. You may also continue using Axios via the [Axios adapter](/v3/installation/client-side-setup#using-axios), or provide a fully [custom HTTP client](/v3/installation/client-side-setup#custom-http-client).
-
-### `qs` Dependency Removed
-
-The `qs` package has been replaced with a built-in query string implementation and is no longer included as a dependency of `@inertiajs/core`. Inertia's internal query string handling remains the same, but you should install `qs` directly if your application imports it.
-
-```bash
-npm install qs
-```
-
-### `lodash-es` Dependency Removed
-
-The `lodash-es` package has been replaced with `es-toolkit` and is no longer included as a dependency of `@inertiajs/core`. You should install `lodash-es` directly if your application imports it.
-
-```bash
-npm install lodash-es
-```
-
-### Event Renames
-
-Two global events have been renamed for clarity:
-
-| v2 Name | v3 Name | Document Event |
-|---|---|---|
-| `invalid` | `httpException` | `inertia:httpException` |
-| `exception` | `networkError` | `inertia:networkError` |
-
-Global event listeners should be updated accordingly:
-
-```js
+```csharp
 // Before (v2)
-router.on('invalid', (event) => { ... })
-router.on('exception', (event) => { ... })
+new Response(component, props, rootView, version,
+    encryptHistory, clearHistory, serializer, urlResolver, withAllErrors)
+```
+
+is now:
+
+```csharp
+// After (v3)
+new Response(component, props, rootView, version,
+    encryptHistory, clearHistory, serializer, urlResolver, withAllErrors,
+    preserveFragment)
+```
+
+The new `preserveFragment` trailing parameter defaults to `false`. Existing
+reflection call sites should append a trailing `false` to restore their
+previous behavior.
+
+### Scattered `Resolve*` Methods Removed
+
+The ad-hoc `Response.ResolveSharedProps()`, `ResolvePartialProperties()`,
+`ResolveOnceProperties()`, `ResolveAlways()`, `ResolveMergeProps()`,
+`ResolveDeepMergeProps()`, `ResolveMatchPropsOn()`, `ResolveDeferredProps()`,
+`ResolveScrollProps()`, `ResolveOnceProps()`, `ResolveInertiaPropertyProviders()`,
+and `GetMergeablePropsForRequest()` methods have been removed from `Response`.
+All prop resolution now happens inside the new internal `PropsResolver` class
+in a single recursive pass.
+
+`Response.ResolveValidationErrors()`, `ResolveCacheDirections()`, and
+`ResolveFlashData()` remain on `Response` because they build page-level
+metadata rather than resolving individual props.
+
+No action is required unless your code reflected into these methods directly.
+
+### `Gateway` Constructor Gains `IHttpContextAccessor`
+
+`InertiaCore.Ssr.Gateway` now takes `IHttpContextAccessor` via its constructor
+so it can read per-request SSR disable state from `HttpContext.Items`. The
+service is already registered by `services.AddInertia()` via
+`services.AddHttpContextAccessor()`, so production DI wiring requires no
+changes.
+
+Test code that instantiates `Gateway` by hand must pass an accessor:
+
+```csharp
+// Before (v2)
+var gateway = new Gateway(
+    httpClientFactory, serializer, options, environment);
 
 // After (v3)
-router.on('httpException', (event) => { ... })
-router.on('networkError', (event) => { ... })
+var gateway = new Gateway(
+    httpClientFactory, serializer, options, environment,
+    Mock.Of<IHttpContextAccessor>());
 ```
 
-You may also handle these events per-visit using the new `onHttpException` and `onNetworkError` callbacks:
+### `Page.SharedProps` Field Added
 
-```js
-router.post('/users', data, {
-    onHttpException: (response) => { ... },
-    onNetworkError: (error) => { ... },
-})
-```
+The internal `Page` model gained a new `SharedProps` field that serializes as
+`sharedProps` in the JSON response body. This is a wire-format addition — the
+Inertia.js v3 frontend reads it to preserve top-level shared props across
+instant visits.
 
-Returning `false` from the `onHttpException` callback or calling `event.preventDefault()` on the global `httpException` event will prevent Inertia from navigating to the error page. This allows you to handle HTTP exceptions (4xx and 5xx responses) without leaving the current page.
+The field is nullable and omitted from the JSON payload when empty, so
+existing v2 frontends are unaffected.
 
-```js
-router.post('/users', data, {
-    onHttpException: (response) => {
-        // Handle the error without navigating
-        return false
-    },
-})
-```
+### Configuration Changes
 
-### `router.cancel()` Replaced
+`InertiaOptions` gained several new properties for v3 features:
 
-The `router.cancel()` method has been replaced by `router.cancelAll()`. In v2, `cancel()` only cancelled synchronous requests. The new `cancelAll()` method cancels all synchronous, asynchronous, and prefetch requests by default. You may pass options to limit which request types are cancelled.
+- `SsrBundlePath` — explicit override for SSR bundle discovery
+- `SsrThrowOnError` — opt-in to typed `SsrException` on SSR failure
+- `WithAllErrors` — emit every ModelState error message for a field instead of
+  only the first
+- `UseScriptTagForInitialPage` — emit the initial page state as a
+  `<script type="application/json">` element instead of an HTML-encoded
+  `data-page` attribute
 
-```js
-// Before (v2) — only cancelled sync requests
-router.cancel()
+None are breaking. All default to the v2 behavior. Review the updated
+`InertiaOptions.cs` if you want to opt into the new defaults.
 
-// After (v3) — cancels all request types
-router.cancelAll()
+### Deprecated Session-Based History Flags Removed
 
-// To match v2 behavior (sync only)...
-router.cancelAll({ async: false, prefetch: false })
-```
+The deprecated session-backed paths for `ClearHistory` and `EncryptHistory`
+have been removed. Both now store their state exclusively on
+`HttpContext.Items`, which fixes a concurrency bug where the flags would race
+between concurrent requests on the singleton factory.
 
-See the [visit cancellation](/v3/the-basics/manual-visits#visit-cancellation) documentation for more details.
-
-### Future Options Removed
-
-The `future` configuration namespace has been removed. All four future options from v2 are now always enabled and no longer configurable:
-
-- `future.preserveEqualProps`
-- `future.useDataInertiaHeadAttribute`
-- `future.useDialogForErrorModal`
-- `future.useScriptElementForInitialPage`
-
-```js
-// Before (v2)
-createInertiaApp({
-    defaults: {
-        future: {
-            preserveEqualProps: true,
-            useDataInertiaHeadAttribute: true,
-            useDialogForErrorModal: true,
-            useScriptElementForInitialPage: true,
-        },
-    },
-})
-
-// After (v3) - just remove the `future` block
-createInertiaApp({
-    // ...
-})
-```
-
-Initial page data is now always passed via a `<script type="application/json">` element. The legacy `data-page` attribute approach is no longer supported.
-
-### Head Element Attributes
-
-The `inertia` attribute used on elements in your root Blade template's `<head>` section has been renamed to `data-inertia`. You should update any head elements that use this attribute:
-
-```html
-<!-- Before (v2) -->
-<title inertia>My Website</title>
-
-<!-- After (v3) -->
-<title data-inertia>My Website</title>
-```
-
-### Progress Indicator Exports Removed
-
-The named exports `hideProgress()` and `revealProgress()` have been removed. If needed, use the `progress` object directly:
-
-```js
-import { progress } from '@inertiajs/vue3'
-
-progress.hide()
-progress.reveal()
-```
-
-### Deferred Component Behavior (React)
-
-The React `<Deferred>` component no longer resets to show the fallback during partial reloads. Previously, the fallback was shown each time a partial reload was triggered. Now the existing content remains visible while new data loads, consistent with the Vue and Svelte behavior.
-
-A new `reloading` slot prop is available across all adapters, allowing you to show a loading indicator during partial reloads while keeping the existing content visible. See the [deferred props](/v3/data-props/deferred-props#reloading) documentation for details.
-
-### Form Processing Reset Timing
-
-The `useForm` helper now only resets `processing` and `progress` state in the `onFinish` callback, rather than immediately upon receiving a response. This ensures the processing state remains `true` until the visit is fully complete.
-
-### LazyProp Removed
-
-The `Inertia::lazy()` method and `LazyProp` class, deprecated in v2, have been removed. Use `Inertia::optional()` instead, which provides the same functionality:
-
-```php
-// Before (v2)
-return Inertia::render('Users/Index', [
-    'users' => Inertia::lazy(fn () => User::all()),
-]);
-
-// After (v3)
-return Inertia::render('Users/Index', [
-    'users' => Inertia::optional(fn () => User::all()),
-]);
-```
-
-### Config File Restructuring
-
-The Laravel configuration file has been restructured. Page-related settings are now nested under `pages`, and the `testing` section has been simplified:
-
-```php
-// Before (v2) - config/inertia.php
-'testing' => [
-    'ensure_pages_exist' => true,
-    'page_paths' => [resource_path('js/Pages')],
-    'page_extensions' => ['js', 'jsx', 'svelte', 'ts', 'tsx', 'vue'],
-],
-
-// After (v3) - config/inertia.php
-'pages' => [
-    'ensure_pages_exist' => false,
-    'paths' => [resource_path('js/Pages')],
-    'extensions' => ['js', 'jsx', 'svelte', 'ts', 'tsx', 'vue'],
-],
-
-'testing' => [
-    'ensure_pages_exist' => true,
-],
-```
-
-The updated config file should have already been republished as part of the [upgrade dependencies](#upgrade-dependencies) step above.
-
-### Testing Concerns Removed
-
-The deprecated `Inertia\Testing\Concerns\Has`, `Inertia\Testing\Concerns\Matching`, and `Inertia\Testing\Concerns\Debugging` traits have been removed. These traits were deprecated in v1 and replaced by the `AssertableInertia` class. No action is required unless your application references these traits directly.
+This is only breaking for code that read or wrote
+`session["inertia.clear_history"]` / `session["inertia.encrypt_history"]`
+directly. The public `Inertia.ClearHistory()` and `Inertia.EncryptHistory()`
+facade methods are unchanged.
 
 ## Other Changes
 
 ---
 
-### Blade Components
-
-Inertia now provides `<x-inertia::head>` and `<x-inertia::app>` Blade components as an alternative to the `@inertiaHead` and `@inertia` directives. The head component accepts fallback content via its slot that only renders when SSR is not active, solving the long-standing issue of duplicate `<title>` tags in SSR applications.
-
-```blade resources/views/app.blade.php
-<html>
-    <head>
-        @vite('resources/js/app.js')
-        <x-inertia::head>
-            <title>{{ config('app.name') }}</title>
-        </x-inertia::head>
-    </head>
-    <body>
-        <x-inertia::app />
-    </body>
-</html>
-```
-
-The existing directives continue to work and require no changes.
-
-### SSR in Development
-
-When using the new `@inertiajs/vite` plugin, SSR works automatically during development by simply running `npm run dev`. You no longer need to build your SSR bundle with `vite build --ssr` or start a separate Node.js server with `php artisan inertia:start-ssr` during development. These commands are now only required for [production deployments](/v3/advanced/server-side-rendering#running-the-ssr-server).
-
-### Middleware Priority
-
-The Inertia middleware is now automatically registered in Laravel's [middleware priority](https://laravel.com/docs/middleware#sorting-middleware) list, ensuring it runs before middleware like `ThrottleRequests`. This fixes an issue where `PUT`/`PATCH`/`DELETE` requests that were rate-limited could receive a `302` redirect instead of the correct `303`, causing the browser to retry the original request method on the redirect target. No action is required.
-
 ### Nested Prop Types
 
-Prop types like `Inertia::optional()`, `Inertia::defer()`, and `Inertia::merge()` now work inside closures and nested arrays. Inertia resolves them at any depth and uses dot-notation paths in partial reload metadata.
+Prop types like `Inertia.Optional()`, `Inertia.Defer()`, `Inertia.Merge()`,
+`Inertia.DeepMerge()`, and `Inertia.Once()` now work inside closures and
+nested dictionaries. InertiaCore resolves them at any depth and uses
+dot-notation paths in partial reload metadata.
 
-```php
-return Inertia::render('Dashboard', [
-    'auth' => fn () => [
-        'user' => Auth::user(),
-        'notifications' => Inertia::defer(fn () => Auth::user()->unreadNotifications),
-        'invoices' => Inertia::optional(fn () => Auth::user()->invoices),
-    ],
-]);
+```csharp
+return Inertia.Render("Dashboard", new Dictionary<string, object?>
+{
+    ["auth"] = () => new Dictionary<string, object?>
+    {
+        ["user"] = currentUser,
+        ["notifications"] = Inertia.Defer(() => currentUser.UnreadNotifications),
+        ["invoices"] = Inertia.Optional(() => currentUser.Invoices),
+    },
+});
 ```
 
-On the client side, the `only` and `except` options, as well as the `Deferred` and `WhenVisible` components, all support dot-notation for targeting nested props.
+On the client side, the `only` and `except` options, as well as the
+`Deferred` and `WhenVisible` components, all support dot-notation for
+targeting nested props.
 
 ```js
 router.reload({ only: ['auth.notifications'] })
 ```
 
-Classes implementing the [`ProvidesInertiaProperties`](/v3/the-basics/responses#providesinertiaproperties-interface) interface also work at any nesting level.
+Classes implementing the
+[`ProvidesInertiaProperties`](/v3/the-basics/responses#providesinertiaproperties-interface)
+interface also work at any nesting level.
 
-```php
-return Inertia::render('Dashboard', [
-    'auth' => [
-        new AuthProps,
-        'team' => 'Inertia',
-    ],
-]);
+### Dot-Notation Top-Level Keys
+
+When you pass a `Dictionary<string, object?>` with dot-notation keys directly
+to `Inertia.Render`, InertiaCore unpacks them into nested structures before
+resolution:
+
+```csharp
+return Inertia.Render("Profile", new Dictionary<string, object?>
+{
+    ["user.name"] = "Alice",
+    ["user.email"] = "alice@example.com",
+});
+// becomes:
+// {
+//   "user": { "name": "Alice", "email": "alice@example.com" }
+// }
 ```
 
-### ES2022 Build Target
+Anonymous object property names cannot contain dots, so this syntax only
+applies to dictionary-style props.
 
-Inertia packages now target ES2022, up from ES2020 in v2. You may use the [`@vitejs/plugin-legacy`](https://www.npmjs.com/package/@vitejs/plugin-legacy) Vite plugin if your application needs to support older browsers.
+### Enum Component Names
 
-### ESM-Only Packages
+`Inertia.Render` now accepts any `Enum` value as the component name:
 
-All Inertia packages now ship as ES Modules only. CommonJS `require()` imports are no longer supported. You should update any `require()` calls to use `import` statements instead.
+```csharp
+public enum Pages { Home, UserList, UserEdit }
 
-### Page Object Changes
+return Inertia.Render(Pages.UserEdit, new { id });
+```
 
-The `clearHistory` and `encryptHistory` properties in the [page object](/v3/core-concepts/the-protocol#the-page-object) are now optional and only included in the response when `true`. Previously, every response included `"clearHistory": false` and `"encryptHistory": false` even when history wasn't being cleared or encrypted.
+The enum member name (`UserEdit`) is used as the component name. This mirrors
+the Laravel adapter's `BackedEnum | UnitEnum | string` overload while staying
+idiomatic in C#.
+
+### Exception Responses
+
+Register an exception handler closure and render a custom Inertia error page
+when an unhandled exception reaches the pipeline:
+
+```csharp
+// Program.cs
+app.UseInertiaExceptionHandler();
+
+// Startup configuration
+Inertia.HandleExceptionsUsing(response =>
+{
+    response
+        .StatusCode(500)
+        .Render("ErrorPage", new
+        {
+            message = response.Exception.Message,
+            status = response.StatusCode(),
+        })
+        .WithSharedData();
+});
+```
+
+The middleware catches downstream exceptions on Inertia requests, invokes your
+callback, and renders the configured component through the normal pipeline
+(shared props, merge props, etc.). Non-Inertia requests and unconfigured
+handlers fall through to the default ASP.NET Core exception handler.
+
+### Disable SSR Per Request
+
+Opt individual requests out of SSR via the static facade:
+
+```csharp
+// Disable for the current request
+Inertia.DisableSsr();
+
+// Disable based on a predicate evaluated at dispatch time
+Inertia.DisableSsr(() => User.IsInRole("Admin"));
+
+// Disable for URL patterns (supports * wildcards)
+Inertia.WithoutSsr("admin/*", "auth/*");
+```
+
+State is stored per-request in `HttpContext.Items`, so concurrent requests
+don't race. When SSR is disabled for a request, `Gateway.ShouldDispatch()`
+returns `false` and the response falls back to client-side rendering.
+
+### SSR Failure Events
+
+Subscribe to structured SSR failure reports for logging and error tracking:
+
+```csharp
+var gateway = app.ApplicationServices.GetRequiredService<IGateway>();
+gateway.RenderFailed += (sender, evt) =>
+{
+    logger.LogError(
+        "Inertia SSR failed for {Component} at {Url}: {Error} ({Type})",
+        evt.Component, evt.Url, evt.Error, evt.Type);
+};
+```
+
+The `SsrRenderFailed` record carries the failed page data, error message, a
+classified `SsrErrorType` (`Connection`, `Render`, `ComponentResolution`,
+`BrowserApi`, `Unknown`), and optional diagnostic fields (`Hint`, `BrowserApi`,
+`Stack`, `SourceLocation`) when the SSR node process provides them.
+
+The event fires on every SSR failure regardless of the `SsrThrowOnError`
+option — it is purely observational and does not alter the existing
+silent-fallback-by-default semantics.
+
+### Component Transformers
+
+Register a transformer that runs on every `Inertia.Render` call and rewrites
+the component name before it is written to the page response:
+
+```csharp
+Inertia.TransformComponentUsing(name => $"v2/{name}");
+
+// Later:
+Inertia.Render("Home"); // component is "v2/Home"
+```
+
+Useful for backend-driven component versioning or namespace aliasing without
+touching every controller action. The transformer runs before
+`EnsurePagesExist` validation, so the rewritten name is used for on-disk
+component lookup.
+
+### Preserve URL Fragment
+
+`Inertia.PreserveFragment()` flags the current request to have the URL
+fragment (`#section-3`) preserved across the next redirect:
+
+```csharp
+public IActionResult Update(int id, UpdateRequest request)
+{
+    _service.Update(id, request);
+    Inertia.PreserveFragment();
+    return Redirect("/items#saved");
+}
+```
+
+The Inertia.js frontend sees the `preserveFragment` flag on the response and
+reapplies the hash after navigation.
+
+### `PullFlashed`
+
+`Inertia.PullFlashed()` reads the current request's merged flash data (from
+both `HttpContext.Items` and `TempData`) and atomically clears both stores,
+ensuring subsequent calls return empty:
+
+```csharp
+var toast = Inertia.PullFlashed();
+```
+
+Useful when you want a toast or one-shot notification to appear exactly once
+without relying on the normal TempData reflash lifecycle.
+
+### Initial Page as `<script>` Tag
+
+Set `InertiaOptions.UseScriptTagForInitialPage = true` to emit the initial
+page state as a `<script type="application/json">` element instead of an
+HTML-encoded `data-page` attribute on the root div:
+
+```html
+<!-- Default (v2 behavior) -->
+<div id="app" data-page="{&quot;component&quot;:&quot;Home&quot;,...}"></div>
+
+<!-- With UseScriptTagForInitialPage = true -->
+<script data-page="app" type="application/json">{"component":"Home",...}</script>
+<div id="app"></div>
+```
+
+The script-tag variant produces cleaner escaping for large props and
+payloads containing quote characters or HTML fragments. Matches the Laravel
+adapter's `use_script_element_for_initial_page` config.
+
+### `Page.ClearHistory` / `Page.EncryptHistory` Wire Format
+
+The `clearHistory` and `encryptHistory` fields in the page object are now
+omitted from the JSON response when `false`, matching the Laravel adapter's
+v3 behavior. Previously every response included `"clearHistory": false` and
+`"encryptHistory": false` even when history was not being cleared or
+encrypted. This is a wire-format compression, not a behavioral change — the
+Inertia.js frontend treats absent fields as `false`.
