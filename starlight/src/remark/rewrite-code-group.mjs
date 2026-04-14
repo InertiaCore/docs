@@ -29,6 +29,25 @@ function attr(name, value) {
   return { type: "mdxJsxAttribute", name, value };
 }
 
+// Labels in this list are pulled to the front of every CodeGroup,
+// preserving relative order among themselves and among the rest. Lets
+// us promote `.NET` over `Laravel` (the upstream Inertia.js content's
+// default) without rewriting any .mdx file.
+const PROMOTE_TO_FIRST = [".NET"];
+
+function reorderForPromotion(items, labelOf) {
+  const promoted = [];
+  const rest = [];
+  for (const item of items) {
+    if (PROMOTE_TO_FIRST.includes(labelOf(item))) {
+      promoted.push(item);
+    } else {
+      rest.push(item);
+    }
+  }
+  return [...promoted, ...rest];
+}
+
 function parseFence(node, index) {
   const raw = node.meta || "";
   const iconMatch = raw.match(/icon="([^"]*)"/);
@@ -42,10 +61,16 @@ export function rewriteCodeGroup() {
     visit(tree, "mdxJsxFlowElement", (node, index, parent) => {
       if (!parent || node.name !== "CodeGroup") return;
 
-      const codes = node.children.filter((c) => c.type === "code");
-      if (codes.length === 0) return;
+      const rawCodes = node.children.filter((c) => c.type === "code");
+      if (rawCodes.length === 0) return;
 
-      const fences = codes.map(parseFence);
+      // Pair each code node with its parsed metadata BEFORE reordering
+      // so the two arrays can't drift out of sync, then sort to promote
+      // any preferred labels (e.g. .NET) to the front.
+      const paired = rawCodes.map((code, i) => ({ code, ...parseFence(code, i) }));
+      const ordered = reorderForPromotion(paired, (p) => p.label);
+      const codes = ordered.map((p) => p.code);
+      const fences = ordered.map(({ label, icon }) => ({ label, icon }));
 
       const tabButtons = fences.map(({ label, icon }, i) => {
         const children = [];
