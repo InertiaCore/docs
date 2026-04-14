@@ -1,18 +1,44 @@
 ---
 import Default from "@astrojs/starlight/components/SiteTitle.astro";
+import { getCollection } from "astro:content";
 
-// Detect current version from the URL. Fall back to "v3" when the reader
-// isn't on a versioned page (e.g. the landing page).
-const match = Astro.url.pathname.match(/\/docs\/(v[0-9]+(?:\.[0-9]+)?)\b/);
-const currentVersion = match?.[1] ?? "v3";
+// Build a {version: Set<pathAfterVersion>} index from the docs collection
+// so the switcher can ask "does v2 also have `the-basics/forms`?" at
+// render time. getCollection is cached per build, so this runs once.
+const allEntries = await getCollection("docs");
+const slugsByVersion: Record<string, Set<string>> = {};
+for (const entry of allEntries) {
+  const m = entry.id.match(/^docs\/(v\d+)\/(.+)$/);
+  if (!m) continue;
+  const [, version, rest] = m;
+  (slugsByVersion[version] ??= new Set()).add(rest);
+}
 
 const versions = [
   { slug: "v3", label: "v3.x" },
   { slug: "v2", label: "v2.x" },
   { slug: "v1", label: "v1.x" },
 ];
+
+// Detect current version + path-after-version from the URL.
+//   /docs/v2/the-basics/forms/  →  version "v2", path "the-basics/forms"
+//   /docs/v2/                   →  version "v2", path ""
+//   /docs/                      →  version null, path ""
+const pathMatch = Astro.url.pathname.match(/^\/docs\/(v\d+)(?:\/(.*))?$/);
+const currentVersion = pathMatch?.[1] ?? "v3";
+const currentPath = (pathMatch?.[2] ?? "").replace(/\/$/, "");
+
 const currentLabel =
   versions.find((v) => v.slug === currentVersion)?.label ?? "v3.x";
+
+// Resolve the link for each version: keep the same path if the target
+// version has it, otherwise fall back to that version's intro page.
+const fallback = (v: string) => `/docs/${v}/getting-started/`;
+const hrefFor = (v: string) => {
+  if (!currentPath) return fallback(v);
+  if (slugsByVersion[v]?.has(currentPath)) return `/docs/${v}/${currentPath}/`;
+  return fallback(v);
+};
 ---
 
 <div class="site-title-wrap">
@@ -41,7 +67,7 @@ const currentLabel =
         versions.map((v) => (
           <li>
             <a
-              href={`/docs/${v.slug}/getting-started/`}
+              href={hrefFor(v.slug)}
               class={`version-switcher__item ${v.slug === currentVersion ? "version-switcher__item--active" : ""}`}
             >
               {v.label}
