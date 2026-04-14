@@ -20,6 +20,33 @@ Finally, since Inertia apps never generate `422` responses, Inertia needs anothe
 
 In order for your server-side validation errors to be available client-side, your server-side framework must share them via the `errors` prop. Inertia's first-party adapters, such as the Laravel adapter, do this automatically. For other frameworks, you may need to do this manually. Please refer to your specific server-side adapter documentation for more information.
 
+InertiaCore (the ASP.NET Core adapter) automatically forwards every `ModelState` error as the `errors` prop, so [Data Annotations](https://learn.microsoft.com/aspnet/core/mvc/models/validation) and [FluentValidation](https://docs.fluentvalidation.net/) both work without any manual wiring. Just decorate your request model and re-render the action on `!ModelState.IsValid`:
+
+```csharp
+using System.ComponentModel.DataAnnotations;
+
+public class CreateUserRequest
+{
+    [Required, StringLength(50)]
+    public string Name { get; set; } = string.Empty;
+
+    [Required, EmailAddress]
+    public string Email { get; set; } = string.Empty;
+}
+
+[HttpPost("/users")]
+public IActionResult Store([FromBody] CreateUserRequest request)
+{
+    if (!ModelState.IsValid)
+    {
+        // Errors are flashed to TempData and forwarded to the response automatically.
+        return Index();
+    }
+    // ...
+    return RedirectToAction("Index");
+}
+```
+
 ## Displaying Errors
 
 Since validation errors are made available client-side as page component props, you can conditionally display them based on their existence. Remember, when using our first-party server adapters (such as the Laravel adapter), the `errors` prop will automatically be available to your page.

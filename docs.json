@@ -90,10 +90,12 @@
                             "v3/advanced/error-handling",
                             "v3/advanced/events",
                             "v3/advanced/progress-indicators",
+                            "v3/advanced/recommended-middleware",
                             "v3/advanced/scroll-management",
                             "v3/advanced/server-side-rendering",
                             "v3/advanced/testing",
-                            "v3/advanced/typescript"
+                            "v3/advanced/typescript",
+                            "v3/advanced/vite-helper"
                         ]
                     }
                 ]
@@ -173,10 +175,12 @@
                             "v2/advanced/error-handling",
                             "v2/advanced/events",
                             "v2/advanced/progress-indicators",
+                            "v2/advanced/recommended-middleware",
                             "v2/advanced/scroll-management",
                             "v2/advanced/server-side-rendering",
                             "v2/advanced/testing",
-                            "v2/advanced/typescript"
+                            "v2/advanced/typescript",
+                            "v2/advanced/vite-helper"
                         ]
                     }
                 ]
@@ -236,8 +240,10 @@
                             "v1/advanced/error-handling",
                             "v1/advanced/asset-versioning",
                             "v1/advanced/progress-indicators",
+                            "v1/advanced/recommended-middleware",
                             "v1/advanced/remembering-state",
-                            "v1/advanced/server-side-rendering"
+                            "v1/advanced/server-side-rendering",
+                            "v1/advanced/vite-helper"
                         ]
                     }
                 ]

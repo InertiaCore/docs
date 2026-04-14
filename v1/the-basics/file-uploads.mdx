@@ -207,3 +207,31 @@ router.post(`/users/${user.id}\
 ```
 
 </CodeGroup>
+
+On the InertiaCore side, accept the upload as `IFormFile` on a `[FromForm]` model. ASP.NET Core handles the multipart parsing and ModelState validation, and InertiaCore forwards any errors as the `errors` prop:
+
+```csharp
+[HttpPost("/users/{id:int}")]
+public async Task<IActionResult> Update(int id, [FromForm] UserUpdateRequest request)
+{
+    if (!ModelState.IsValid)
+        return await Show(id);
+
+    var user = await _users.FindAsync(id);
+    user.Name = request.Name;
+
+    if (request.Avatar is { Length: > 0 })
+    {
+        user.AvatarPath = await _files.SaveAsync(request.Avatar);
+    }
+
+    await _context.SaveChangesAsync();
+    return Inertia.Render("Users/Show", new { User = user });
+}
+
+public class UserUpdateRequest
+{
+    [Required] public string Name { get; set; } = string.Empty;
+    public IFormFile? Avatar { get; set; }
+}
+```
