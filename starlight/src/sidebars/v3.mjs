@@ -7,6 +7,8 @@ export const sidebarV3 = [
       { label: "Introduction", slug: `${base}/getting-started` },
       { label: "Demo Application", slug: `${base}/getting-started/demo-application` },
       { label: "Upgrade Guide", slug: `${base}/getting-started/upgrade-guide` },
+      { label: "Recommended Middleware", slug: `${base}/getting-started/recommended-middleware` },
+      { label: "Vite Helper", slug: `${base}/getting-started/vite-helper` },
     ],
   },
   {
@@ -74,12 +76,10 @@ export const sidebarV3 = [
       "error-handling",
       "events",
       "progress-indicators",
-      "recommended-middleware",
       "scroll-management",
       "server-side-rendering",
       "testing",
       "typescript",
-      "vite-helper",
     ].map((s) => ({ slug: `${base}/advanced/${s}` })),
   },
 ];
