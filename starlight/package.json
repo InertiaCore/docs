@@ -24,6 +24,7 @@
   },
   "devDependencies": {
     "acorn": "^8.16.0",
-    "unist-util-visit": "^5.1.0"
+    "unist-util-visit": "^5.1.0",
+    "wrangler": "^4.81.1"
   }
 }

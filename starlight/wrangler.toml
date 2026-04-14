@@ -27,17 +27,20 @@ compatibility_date = "2026-04-13"
 directory = "./dist"
 not_found_handling = "404-page"
 
-# Route binding lives in CI, not here.
+# No [[routes]] block here — and that is intentional.
 #
-# Wrangler does not interpolate environment variables inside
-# `[[routes]]` blocks, so this file ships without one. The deploy
-# workflow appends a `[[routes]]` block from the `CF_ROUTE_PATTERN` and
-# `CF_ZONE_NAME` GitHub Actions repository variables before running
-# `wrangler deploy` — see .github/workflows/deploy-starlight.yml.
+# Cloudflare prohibits path-prefixed routes (e.g. `host/docs/*`) for
+# Workers that use [assets]. So this Worker is deployed *without* a zone
+# route and is reached via a service binding from the inertiacore.net
+# frontdoor worker:
 #
-# Without a route, `wrangler deploy` puts this Worker on its
-# *.workers.dev URL, which is fine for local smoke-testing via
-# `npx wrangler deploy` or `npx wrangler dev`.
+#   inertiacore.net (frontdoor, [[routes]] = inertiacore.net/*)
+#     ├─ /docs/*  →  service binding "DOCS"  →  inertiacore-docs (this file)
+#     └─ /*       →  splash static assets
+#
+# See ../../inertiacore.net/wrangler.toml and src/worker.js for the
+# splash side. This Worker stays reachable on its *.workers.dev URL for
+# smoke-testing.
 
 # Optional: separate dev/staging environment with its own subdomain.
 #

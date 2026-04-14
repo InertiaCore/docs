@@ -58,32 +58,14 @@ jobs:
         working-directory: starlight
         run: pnpm build
 
-      - name: Inject Cloudflare route into wrangler.toml
-        # wrangler.toml ships without a [[routes]] block because wrangler
-        # doesn't interpolate env vars there. Append one from repo vars
-        # so the same file works for local *.workers.dev deploys and for
-        # zone-bound CI deploys without a code change.
-        if: vars.CF_ROUTE_PATTERN != '' && vars.CF_ZONE_NAME != ''
-        working-directory: starlight
-        env:
-          CF_ROUTE_PATTERN: ${{ vars.CF_ROUTE_PATTERN }}
-          CF_ZONE_NAME: ${{ vars.CF_ZONE_NAME }}
-        run: |
-          {
-            echo ""
-            echo "[[routes]]"
-            echo "pattern = \"${CF_ROUTE_PATTERN}\""
-            echo "zone_name = \"${CF_ZONE_NAME}\""
-          } >> wrangler.toml
-          echo "--- wrangler.toml route block ---"
-          tail -4 wrangler.toml
-
       - name: Deploy to Cloudflare Workers
         uses: cloudflare/wrangler-action@v3
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           workingDirectory: starlight
-          # wrangler reads ./wrangler.toml from workingDirectory and uses
-          # the [assets] block to upload ./dist.
+          # The docs Worker has no zone route — it's invoked via service
+          # binding from the inertiacore.net frontdoor worker. wrangler
+          # reads ./wrangler.toml and uploads ./dist via the [assets]
+          # block, no route negotiation needed.
           command: deploy
