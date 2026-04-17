@@ -1,8 +1,8 @@
 /* Brand accent — tweak to match inertiajs.com */
 :root {
-  --sl-color-accent-low: #1a2540;
-  --sl-color-accent: #3b5cff;
-  --sl-color-accent-high: #c6d2ff;
+  --sl-color-accent-low: #1d1139;
+  --sl-color-accent: #512bd4;
+  --sl-color-accent-high: #c8b8f5;
 }
 
 /* --- Version switcher --- */
