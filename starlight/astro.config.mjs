@@ -7,6 +7,7 @@ import mdx from "@astrojs/mdx";
 import { injectMdxImports } from "./src/remark/inject-mdx-imports.mjs";
 import { rewriteCodeGroup } from "./src/remark/rewrite-code-group.mjs";
 import { rewriteAsides } from "./src/remark/rewrite-asides.mjs";
+import { prependBaseToLinks } from "./src/remark/prepend-base-to-links.mjs";
 import { sidebarV1 } from "./src/sidebars/v1.mjs";
 import { sidebarV2 } from "./src/sidebars/v2.mjs";
 import { sidebarV3 } from "./src/sidebars/v3.mjs";
@@ -64,11 +65,17 @@ function snippetLoaderPlugin() {
 
 export default defineConfig({
   site: "https://inertiajs.com",
+  base: "/docs",
+  // Emit build output under dist/docs/ so the on-disk layout mirrors
+  // the URL layout. The docs worker is mounted at /docs/* via service
+  // binding — a request for /docs/v3/... resolves to dist/docs/v3/...
+  // without the worker having to rewrite paths.
+  outDir: "./dist/docs",
   // The root splash page lives in a separate repo; this build only owns
   // /docs/*. Redirect the bare /docs entry point to the latest version's
   // intro page so wandering links land somewhere useful.
   redirects: {
-    "/docs": "/docs/v3/getting-started/",
+    "/": "/docs/v3/getting-started/",
   },
   markdown: {
     remarkPlugins: [
@@ -77,6 +84,7 @@ export default defineConfig({
       // need to provide bindings for the originals.
       rewriteCodeGroup,
       rewriteAsides,
+      prependBaseToLinks,
       [
         injectMdxImports,
         {
@@ -104,7 +112,7 @@ export default defineConfig({
         // runs once per navigation.
         {
           tag: "script",
-          attrs: { type: "module", src: "/framework-switcher.js" },
+          attrs: { type: "module", src: "/docs/framework-switcher.js" },
         },
       ],
       expressiveCode: {

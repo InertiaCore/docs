@@ -1,4 +1,4 @@
-const base = "docs/v3";
+const base = "v3";
 
 export const sidebarV3 = [
   {

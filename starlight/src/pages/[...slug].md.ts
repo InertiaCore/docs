@@ -23,12 +23,9 @@ function cleanMarkdown(content: string): string {
 export const getStaticPaths: GetStaticPaths = async () => {
   const entries = await getCollection("docs");
   return entries
-    .filter((entry) => /^docs\/v\d+\//.test(entry.id))
+    .filter((entry) => /^v\d+\//.test(entry.id))
     .map((entry) => ({
-      // Strip the leading `docs/` from the collection id — the file
-      // sits inside `src/pages/docs/`, so the slug param is the
-      // remainder of the URL between `/docs/` and `.md`.
-      params: { slug: entry.id.replace(/^docs\//, "") },
+      params: { slug: entry.id },
       props: { entry },
     }));
 };

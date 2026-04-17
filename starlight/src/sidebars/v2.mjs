@@ -1,4 +1,4 @@
-const base = "docs/v2";
+const base = "v2";
 
 export const sidebarV2 = [
   {

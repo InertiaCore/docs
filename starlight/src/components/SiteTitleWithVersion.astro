@@ -8,7 +8,7 @@ import { getCollection } from "astro:content";
 const allEntries = await getCollection("docs");
 const slugsByVersion: Record<string, Set<string>> = {};
 for (const entry of allEntries) {
-  const m = entry.id.match(/^docs\/(v\d+)\/(.+)$/);
+  const m = entry.id.match(/^(v\d+)\/(.+)$/);
   if (!m) continue;
   const [, version, rest] = m;
   (slugsByVersion[version] ??= new Set()).add(rest);

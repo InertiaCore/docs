@@ -1,6 +1,6 @@
 // Ported from docusaurus/sidebars-v1.js. Slugs are relative to
 // src/content/docs/ and point at the symlinked v1/ tree.
-const base = "docs/v1";
+const base = "v1";
 
 export const sidebarV1 = [
   {
