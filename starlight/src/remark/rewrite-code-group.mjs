@@ -33,7 +33,7 @@ function attr(name, value) {
 // preserving relative order among themselves and among the rest. Lets
 // us promote `.NET` over `Laravel` (the upstream Inertia.js content's
 // default) without rewriting any .mdx file.
-const PROMOTE_TO_FIRST = [".NET"];
+const PROMOTE_TO_FIRST = ["Razor (.NET)", ".NET"];
 
 function reorderForPromotion(items, labelOf) {
   const promoted = [];
