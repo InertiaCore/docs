@@ -82,9 +82,16 @@ const hrefFor = (v: string) => {
 <script>
   // The Starlight header clips overflow, so position the menu with
   // `position: fixed` and compute top/left from the button's bounding rect.
-  const btn = document.querySelector<HTMLButtonElement>("[data-version-button]");
-  const menu = document.querySelector<HTMLElement>("[data-version-menu]");
-  if (btn && menu) {
+  // Re-run on every `astro:page-load` because ClientRouter swaps the DOM
+  // on navigation and the previous listeners are bound to a stale button.
+  let controller: AbortController | null = null;
+  const setup = () => {
+    controller?.abort();
+    const btn = document.querySelector<HTMLButtonElement>("[data-version-button]");
+    const menu = document.querySelector<HTMLElement>("[data-version-menu]");
+    if (!btn || !menu) return;
+    controller = new AbortController();
+    const { signal } = controller;
     const place = () => {
       const rect = btn.getBoundingClientRect();
       menu.style.top = `${rect.bottom + 4}px`;
@@ -98,11 +105,13 @@ const hrefFor = (v: string) => {
     btn.addEventListener("click", (e) => {
       e.stopPropagation();
       toggle(menu.hidden);
-    });
+    }, { signal });
     document.addEventListener("click", (e) => {
       if (!menu.contains(e.target as Node) && e.target !== btn) toggle(false);
-    });
-    window.addEventListener("scroll", () => toggle(false), { passive: true });
-    window.addEventListener("resize", () => toggle(false));
-  }
+    }, { signal });
+    window.addEventListener("scroll", () => toggle(false), { passive: true, signal });
+    window.addEventListener("resize", () => toggle(false), { signal });
+  };
+  setup();
+  document.addEventListener("astro:page-load", setup);
 </script>

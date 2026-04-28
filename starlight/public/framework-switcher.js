@@ -90,9 +90,10 @@
     });
   }
 
-  if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", init);
-  } else {
-    init();
-  }
+  // `astro:page-load` fires at the end of every navigation — the initial
+  // full load AND each subsequent client-side nav from <ClientRouter />.
+  // Using it (instead of DOMContentLoaded) ensures tab handlers + wrapper
+  // visibility re-sync after SPA transitions, since the new <body> is
+  // swapped in without re-running scripts from <head>.
+  document.addEventListener("astro:page-load", init);
 })();
