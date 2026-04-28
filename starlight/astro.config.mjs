@@ -145,6 +145,7 @@ export default defineConfig({
         },
       ],
       components: {
+        Head: "./src/components/Head.astro",
         SiteTitle: "./src/components/SiteTitleWithVersion.astro",
         Sidebar: "./src/components/VersionedSidebar.astro",
         PageTitle: "./src/components/PageTitleWithMarkdownActions.astro",
