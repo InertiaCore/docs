@@ -66,7 +66,9 @@ public class UsersController : Controller
         _context.Users.Add(new User { Name = request.Name, Email = request.Email });
         await _context.SaveChangesAsync();
 
-        return RedirectToAction("Index");
+        return Inertia.Back();
+        //
+        // return RedirectToAction(nameof(Index));
     }
 }
 ```
@@ -78,6 +80,12 @@ public class UsersController : Controller
 When redirecting after a `PUT`, `PATCH`, or `DELETE` request, you must use a `303` response code, otherwise the subsequent request will not be treated as a `GET`request. A `303` redirect is very similar to a `302` redirect; however, the follow-up request is explicitly changed to a `GET` request.
 
 If you're using one of our official server-side adapters, all redirects will automatically be converted to `303` redirects.
+
+When using `InertiaCore`, redirects created via `Inertia.Back()` are automatically converted to `303` responses. You may optionally pass a fallback URL (used when the `Referer` header is unavailable) and a custom status code:
+
+```csharp
+return Inertia.Back(fallbackUrl, statusCode);
+```
 
 ## External Redirects
 
