@@ -5,6 +5,7 @@ export const sidebarV2 = [
     label: "Getting Started",
     items: [
       { label: "Introduction", slug: `${base}/getting-started` },
+      { label: "Quick Start", slug: `${base}/getting-started/quick-start` },
       { label: "Demo Application", slug: `${base}/getting-started/demo-application` },
       { label: "Upgrade Guide", slug: `${base}/getting-started/upgrade-guide` },
       { label: "Recommended Middleware", slug: `${base}/getting-started/recommended-middleware` },

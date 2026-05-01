@@ -1,0 +1,47 @@
+---
+title: Quick Start
+---
+
+import V1EOLWarning from "/snippets/v1-eol-warning.mdx";
+
+<V1EOLWarning />
+
+Use the following steps to get up and running with a fresh project using [InertiaCore](https://github.com/kapi2289/InertiaCore). If you would like to install InertiaCore into an existing project, please refer to the [server-side setup](/v1/installation/server-side-setup) instructions.
+
+## Prerequisites
+
+- .NET 6.0 or higher
+- Node.js 18.0 or higher
+
+## New Project
+
+You can use the `create-inertiacore` starter kit to scaffold a new project:
+
+```bash
+npm create inertiacore@latest
+```
+
+You will be asked to enter a project name and to select the front-end library you want to use — React, Vue, or Svelte.
+
+### Run the Project
+
+Once the project has been created, you can run it using the following commands.
+
+In one terminal, start the .NET development server:
+
+```bash
+dotnet run
+```
+
+In another terminal, start the Vite development server for your front-end:
+
+```bash
+cd ClientApp
+npm run dev
+```
+
+You can then access the application at `http://localhost:5266` (or `https://localhost:7266` if you are using HTTPS).
+
+## Existing Project
+
+If you are looking to install InertiaCore into an existing project, please refer to the [server-side setup](/v1/installation/server-side-setup) and [client-side setup](/v1/installation/client-side-setup) instructions.
